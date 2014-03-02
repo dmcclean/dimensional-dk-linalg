@@ -17,7 +17,8 @@ extra-source-files:  README.md
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Numeric.LinearAlgebra.Dimensional.DK.Shapes
+  exposed-modules:     Numeric.LinearAlgebra.Dimensional.DK.Internal,
+                       Numeric.LinearAlgebra.Dimensional.DK.Shapes
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base < 5,

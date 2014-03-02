@@ -218,11 +218,6 @@ det = undefined
 expm :: (s ~ ShapeProduct s s, HasProduct s s) => DimMat s a -> DimMat s a
 expm = undefined
 
-
-{- | Numeric.Container.'H.scale'
-
--}
-
 scale :: Quantity d a -> DimMat s a -> DimMat (ShapeScale d s) a
 scale = undefined
 
@@ -231,31 +226,6 @@ add = undefined
 
 sub :: DimMat s a -> DimMat s a -> DimMat s a
 sub = undefined
-
-{- | Numeric.Container.'H.scaleRecip'
--}
-{-
-scaleRecip :: (MapMultEq e r' r'', AreRecips r r', AreRecips c c',
-                c' ~ (DOne ': _1))
-    => Quantity e a -> DimMat [r,c] a -> DimMat [r'',c'] a
-scaleRecip (Dimensional t) (DimMat a) = DimMat (H.scaleRecip t a)
-
--- | the same as  @scaleRecip (_1 :: Dimensionless t)@
-recipMat :: (AreRecips r r', AreRecips c c', c' ~ (DOne ': _1))
-    => DimMat [r,c] a -> DimMat [r',c'] a
-recipMat (DimMat m) = DimMat (H.scaleRecip 1 m)
-
-mul :: (ZipWithZipWithMul sh sh' sh'',
-       sh'' ~ [_1 ': _2, DOne ': _3]) => DimMat sh a -> DimMat sh' a -> DimMat sh'' a
-mul (DimMat a) (DimMat b) = DimMat (H.mul a b)
-
-divide :: (ZipWithZipWithMul sh' sh'' sh,
-          sh'' ~ [_1 ': _2,DOne ': _3]) => DimMat sh a -> DimMat sh' a -> DimMat sh'' a
-divide (DimMat a) (DimMat b) = DimMat (H.divide a b)
-
-arctan2 :: (sh' ~ MapMapConst DOne sh) => DimMat sh a -> DimMat sh a -> DimMat sh' a
-arctan2 (DimMat a) (DimMat b) = DimMat (H.arctan2 a b)
--}
 
 equal :: (Eq a) => DimMat s a -> DimMat s a -> Bool
 equal = undefined

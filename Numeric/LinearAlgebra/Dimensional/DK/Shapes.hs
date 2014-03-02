@@ -12,9 +12,10 @@
 {- | This module only exposes the types and type functions neccessary to express linear algebra, it doesn't actually implement term-level linear algebra.
 -}
 module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
-  MatrixShape,
+  MatrixShape(..),
   VectorShape,
   HasProduct,
+  ShapeScale,
   ShapeProduct,
   ShapeTranspose,
   ShapeInverse,
@@ -22,9 +23,16 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   ShapeDimensionless,
   ShapeRows,
   ShapeCols,
+  HasIdentity,
+  HasTrace,
+  ShapeTrace,
   DivideVectors,
   VectorLength,
   Square,
+  HorizontallyConcatenable,
+  VerticallyConcatenable,
+  HorizontalConcatenation,
+  VerticalConcatenation,
   MatrixElement,
   VectorElement,
   -- row extractor
@@ -43,6 +51,10 @@ data MatrixShape = MatrixShape Dimension [Dimension] [Dimension]
 
 -- define a data kind for vector shapes
 data VectorShape = VectorShape (NonEmpty Dimension)
+
+
+type family ShapeScale (d :: Dimension) (s :: MatrixShape) :: MatrixShape where
+  ShapeScale d ('MatrixShape g rs cs) = 'MatrixShape (d * g) rs cs
 
 
 -- Define the circumstances under which matrices have a product.
@@ -78,6 +90,18 @@ type family ShapeDimensionless (shape :: MatrixShape) :: MatrixShape where
   ShapeDimensionless ('MatrixShape g rs cs) = 'MatrixShape DOne (MapConstOne cs) (MapConstOne cs)
 
 
+-- Constrain matrix shapes that have an identity matrix.
+type family HasIdentity (shape :: MatrixShape) :: Constraint where
+  HasIdentity ('MatrixShape g rs cs) = (g ~ DOne, rs ~ MapInv cs)
+
+
+type family HasTrace (shape :: MatrixShape) :: Constraint where
+  HasTrace ('MatrixShape g rs cs) = (rs ~ MapInv cs)
+
+type family ShapeTrace (shape :: MatrixShape) :: Dimension where
+  ShapeTrace ('MatrixShape g rs cs) = g
+
+
 -- Define the type-level number of rows in a matrix.
 type family ShapeRows (shape :: MatrixShape) :: N.NumType where
   ShapeRows ('MatrixShape g rs cs) = N.Pos1 N.+ (ListLength rs)
@@ -104,6 +128,21 @@ type family DivideVectors (to :: VectorShape) (from :: VectorShape) :: MatrixSha
                                                                        (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
                                                                        (MapDiv (ListHead (f ': fs)) (t ': ts))
                                                                        (MapMul (ListHead (f ': fs)) (MapInv (f ': fs)))
+
+
+
+type family HorizontallyConcatenable (s1 :: MatrixShape) (s2 :: MatrixShape) :: Constraint where
+  HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, rs1 ~ rs2)
+
+type family HorizontalConcatenation (s1 :: MatrixShape) (s2 :: MatrixShape) :: MatrixShape where
+  HorizontalConcatenation ('MatrixShape g rs1 cs) ('MatrixShape g rs2 cs) = 'MatrixShape g (ListAppend rs1 rs2) cs
+
+type family VerticallyConcatenable (s1 :: MatrixShape) (s2 :: MatrixShape) :: Constraint where
+  VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, cs1 ~ cs2)
+
+type family VerticalConcatenation (s1 :: MatrixShape) (s2 :: MatrixShape) :: MatrixShape where
+  VerticalConcatenation ('MatrixShape g rs cs1) ('MatrixShape g rs cs2) = 'MatrixShape g rs (ListAppend cs1 cs2)
+
 
 
 -- Extract the dimension of an element from a shape.
@@ -158,6 +197,12 @@ type family ListHead (xs :: [k]) :: k where
 type family ListLength (xs :: [k]) :: N.NumType where
   ListLength '[] = N.Zero
   ListLength (x ': xs) = N.Pos1 N.+ (ListLength xs)
+
+
+type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
+  ListAppend '[] ys = ys
+  ListAppend (x ': xs) ys = x ': (ListAppend xs ys)
+
 
 
 -- Get a specified, zero-indexed element from a type-level list.
