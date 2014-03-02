@@ -35,14 +35,15 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   VerticalConcatenation,
   MatrixElement,
   VectorElement,
-  -- row extractor
-  -- column extractor
+  MatrixRow,
+  MatrixColumn,
   ) where
 
 import GHC.Exts (Constraint)
 import Numeric.Units.Dimensional.DK.Prelude
 import qualified Prelude as P
 import qualified Numeric.NumType.DK as N
+import qualified Numeric.NumType.DK.Nat as NN
 
 -- define a data kind for matrix shapes
 -- a matrix shape is a single global dimension, an n-1 list of row dimesnions, and an m-1 list of column dimensions
@@ -145,17 +146,22 @@ type family VerticalConcatenation (s1 :: MatrixShape) (s2 :: MatrixShape) :: Mat
 
 
 -- Extract the dimension of an element from a shape.
-type family MatrixElement (shape :: MatrixShape) (row :: N.NumType) (col :: N.NumType) :: Dimension where
+type family MatrixElement (shape :: MatrixShape) (row :: NN.Nat) (col :: NN.Nat) :: Dimension where
   MatrixElement ('MatrixShape g rs cs) i j = g * ((ElementAt (DOne ': rs) i) * (ElementAt (DOne ': cs) j))
 
 
 -- Extract the dimension of an element from a vector shape.
--- TODO: define second case once NumType has been re-arranged.
-type family VectorElement (shape :: VectorShape) (i :: N.NumType) :: Dimension where
-  VectorElement ('VectorShape d ds) N.Zero = d
---type instance VectorElement ('VectorShape d ds) (N.S i) = ElementAt ds i
+type family VectorElement (shape :: VectorShape) (i :: NN.Nat) :: Dimension where
+  VectorElement ('VectorShape d ds) NN.Z = d
+  VectorElement ('VectorShape d ds) (NN.S i) = ElementAt ds i
 
+-- Extract a row from a matrix.
+type family MatrixRow (shape :: MatrixShape) (row :: NN.Nat) :: VectorShape where
+  MatrixRow ('MatrixShape g rs cs) row = 'VectorShape (g * ElementAt (DOne ': rs) row) (MapMul (g * ElementAt (DOne ': rs) row) cs)
 
+-- Extract a column from a matrix.
+type family MatrixColumn (shape :: MatrixShape) (col :: NN.Nat) :: VectorShape where
+  MatrixColumn ('MatrixShape g rs cs) col = 'VectorShape (g * ElementAt (DOne ': cs) col) (MapMul (g * ElementAt (DOne ': cs) col) rs)
 
 -- Invert all dimensions in a list of dimensions.
 type family MapInv (dims :: [Dimension]) :: [Dimension] where
@@ -205,7 +211,6 @@ type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
 
 
 -- Get a specified, zero-indexed element from a type-level list.
--- TODO: define second case once NumType has been re-arranged
-type family ElementAt (xs :: [k]) (n :: N.NumType) :: k where
-  ElementAt (a ': as) N.Z = a
---  ElementAt (a ': as) (N.S n) = ElementAt as n
+type family ElementAt (xs :: [k]) (n :: NN.Nat) :: k where
+  ElementAt (a ': as) NN.Z = a
+  ElementAt (a ': as) (NN.S n) = ElementAt as n

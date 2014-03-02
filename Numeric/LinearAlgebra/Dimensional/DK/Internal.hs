@@ -141,6 +141,7 @@ import qualified Prelude as P
 import qualified Numeric.NumType.DK as N
 
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
+import Data.Proxy
 
 {- | Matrix with statically checked units (and dimensions). This wraps up
 HMatrix. The `sh` type parameter here contains @[row,column]@ units.
@@ -154,7 +155,9 @@ a 0-row matrix.
 -}
 data DimMat (shape :: MatrixShape) a where
   DimMat :: [[a]] -> DimMat shape a
-  DimVec :: [a] -> DimMat shape a
+
+data DimVec (shape :: VectorShape) a where
+  DimVec :: [a] -> DimVec shape a
 
 {-
 -- | Data.Packed.Vector.'H.@>'
@@ -239,11 +242,19 @@ vconcat = undefined
 rank :: DimMat s a -> Integer
 rank = undefined
 
-rows :: forall n s a.(N.ToInteger n, n ~ N.NT (ShapeRows s)) => DimMat s a -> Integer
-rows _ = N.toInteger (undefined :: n)
+rows :: forall s a.(N.KnownNumType (ShapeRows s)) => DimMat s a -> Integer
+rows _ = N.toNum (Proxy :: Proxy (ShapeRows s))
 
-cols :: forall n s a.(N.ToInteger n, n ~ N.NT (ShapeCols s)) => DimMat s a -> Integer
-cols _ = N.toInteger (undefined :: n)
+cols :: forall s a.(N.KnownNumType (ShapeCols s)) => DimMat s a -> Integer
+cols _ = N.toNum (Proxy :: Proxy (ShapeCols s))
+
+-- TODO: add a constraint that the row exists for better error message?
+row :: forall n s a.Proxy n -> DimMat s a -> DimVec (MatrixRow s n) a
+row = undefined
+
+-- TODO: add a constraint that the column exists for better error message?
+col :: forall n s a.Proxy n -> DimMat s a -> DimVec (MatrixColumn s n) a
+col = undefined
 
 {-
 scalar :: (H.Field a,
