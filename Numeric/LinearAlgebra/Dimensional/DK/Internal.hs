@@ -143,21 +143,9 @@ import qualified Numeric.NumType.DK as N
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 import Data.Proxy
 
-{- | Matrix with statically checked units (and dimensions). This wraps up
-HMatrix. The `sh` type parameter here contains @[row,column]@ units.
-The outer product of @row@ and @column@ lists gives a matrix of units of
-the same size as the data contained within.
-
-some pain happens to ensure that sh always follows the convention
-that the first element of the column units is 'DOne'. One remaining
-potential error is that you can have @ri ~ '[]@, which would make for
-a 0-row matrix.
--}
-data DimMat (shape :: MatrixShape) a where
-  DimMat :: [[a]] -> DimMat shape a
-
-data DimVec (shape :: VectorShape) a where
-  DimVec :: [a] -> DimVec shape a
+data DimMat (shape :: Shape) a where
+  DimMat :: [[a]] -> DimMat ('MatrixShape g rs cs) a
+  DimVec :: [a] -> DimMat ('VectorShape d ds) a
 
 {-
 -- | Data.Packed.Vector.'H.@>'
@@ -249,12 +237,12 @@ cols :: forall s a.(N.KnownNumType (ShapeCols s)) => DimMat s a -> Integer
 cols _ = N.toNum (Proxy :: Proxy (ShapeCols s))
 
 -- TODO: add a constraint that the row exists for better error message?
-row :: forall n s a.Proxy n -> DimMat s a -> DimVec (MatrixRow s n) a
-row = undefined
+row :: forall n s a d ds.(MatrixRow s n ~ 'VectorShape d ds) => Proxy n -> DimMat s a -> DimMat ('VectorShape d ds) a
+row _ _ = DimVec undefined
 
 -- TODO: add a constraint that the column exists for better error message?
-col :: forall n s a.Proxy n -> DimMat s a -> DimVec (MatrixColumn s n) a
-col = undefined
+col :: forall n s a d ds.(MatrixColumn s n ~ 'VectorShape d ds) => Proxy n -> DimMat s a -> DimMat ('VectorShape d ds) a
+col _ _ = DimVec undefined
 
 {-
 scalar :: (H.Field a,

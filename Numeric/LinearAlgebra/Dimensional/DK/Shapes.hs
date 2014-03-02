@@ -12,8 +12,7 @@
 {- | This module only exposes the types and type functions neccessary to express linear algebra, it doesn't actually implement term-level linear algebra.
 -}
 module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
-  MatrixShape(..),
-  VectorShape,
+  Shape(..),
   HasProduct,
   ShapeScale,
   ShapeProduct,
@@ -47,120 +46,123 @@ import qualified Numeric.NumType.DK.Nat as NN
 
 -- define a data kind for matrix shapes
 -- a matrix shape is a single global dimension, an n-1 list of row dimesnions, and an m-1 list of column dimensions
-data MatrixShape = MatrixShape Dimension [Dimension] [Dimension]
-
--- define a data kind for vector shapes
-data VectorShape = VectorShape Dimension [Dimension]
+data Shape = MatrixShape Dimension [Dimension] [Dimension]
+           | VectorShape Dimension [Dimension]
 
 
-type family ShapeScale (d :: Dimension) (s :: MatrixShape) :: MatrixShape where
+type family ShapeScale (d :: Dimension) (s :: Shape) :: Shape where
   ShapeScale d ('MatrixShape g rs cs) = 'MatrixShape (d * g) rs cs
+  ShapeScale d ('VectorShape x xs) = 'VectorShape (d * x) (MapMul d xs)
 
 
--- Define the circumstances under which matrices have a product.
-type family HasProduct (ldims :: MatrixShape) (rdims :: MatrixShape) :: Constraint where
+-- Define the circumstances under which an inner product exists.
+type family HasProduct (ldims :: Shape) (rdims :: Shape) :: Constraint where
   HasProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ MapInv rs2)
+  -- other entries for matrix/vector products
 
-
--- Define the shape of matrix products.
+-- Define the shape of inner products.
 -- This is defined even where the product doesn't exist (non-matching dimensions or sizes), but no problem arises because you can't call the actual term-level product method at such shapes.
-type family ShapeProduct (ldims :: MatrixShape) (rdims :: MatrixShape) :: MatrixShape where
+type family ShapeProduct (ldims :: Shape) (rdims :: Shape) :: Shape where
   ShapeProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape (g1 * g2) rs1 cs2
+  -- other entries for matrix/vector products
 
-
--- Define the shape of matrix transposition.
+-- Define the shape of transposition.
 -- The shape of matrix transposition for shapes expressed in this form is simple, just flip the rows and columns.
-type family ShapeTranspose (mdims :: MatrixShape) :: MatrixShape where
+type family ShapeTranspose (mdims :: Shape) :: Shape where
   ShapeTranspose ('MatrixShape g rs cs) = 'MatrixShape g cs rs
 
 
 -- Define the shape of matrix inversion.
-type family ShapeInverse (mdims :: MatrixShape) :: MatrixShape where
+type family ShapeInverse (mdims :: Shape) :: Shape where
   ShapeInverse ('MatrixShape g rs cs) = 'MatrixShape (Inverse g) (MapInv cs) (MapInv rs)
 
 
 -- Define the type of a matrix determinant.
 -- This is defined even where the determinant doesn't exist (non-square shapes), but no problem arises because you can't call the actual term-level determinant method at non-square shapes.
-type family ShapeDeterminant (shape :: MatrixShape) :: Dimension where
+type family ShapeDeterminant (shape :: Shape) :: Dimension where
   ShapeDeterminant ('MatrixShape g rs cs) = g * ((DimProduct rs) * (DimProduct cs))
 
 
 -- Define the type of a matrix the same size, but with dimensions stripped.
-type family ShapeDimensionless (shape :: MatrixShape) :: MatrixShape where
+type family ShapeDimensionless (shape :: Shape) :: Shape where
   ShapeDimensionless ('MatrixShape g rs cs) = 'MatrixShape DOne (MapConstOne cs) (MapConstOne cs)
+  ShapeDimensionless ('VectorShape d ds) = 'VectorShape DOne (MapConstOne ds)
 
 
 -- Constrain matrix shapes that have an identity matrix.
-type family HasIdentity (shape :: MatrixShape) :: Constraint where
+type family HasIdentity (shape :: Shape) :: Constraint where
   HasIdentity ('MatrixShape g rs cs) = (g ~ DOne, rs ~ MapInv cs)
 
 
-type family HasTrace (shape :: MatrixShape) :: Constraint where
+type family HasTrace (shape :: Shape) :: Constraint where
   HasTrace ('MatrixShape g rs cs) = (rs ~ MapInv cs)
 
-type family ShapeTrace (shape :: MatrixShape) :: Dimension where
+type family ShapeTrace (shape :: Shape) :: Dimension where
   ShapeTrace ('MatrixShape g rs cs) = g
 
 
 -- Define the type-level number of rows in a matrix.
-type family ShapeRows (shape :: MatrixShape) :: N.NumType where
+type family ShapeRows (shape :: Shape) :: N.NumType where
   ShapeRows ('MatrixShape g rs cs) = N.Pos1 N.+ (ListLength rs)
 
 
 -- Define the type-level number of columns in a matrix.
-type family ShapeCols (shape :: MatrixShape) :: N.NumType where
+type family ShapeCols (shape :: Shape) :: N.NumType where
   ShapeCols ('MatrixShape g rs cs) = N.Pos1 N.+ (ListLength cs)
 
 
-type family VectorLength (shape :: VectorShape) :: N.NumType where 
+type family VectorLength (shape :: Shape) :: N.NumType where 
   VectorLength ('VectorShape a as) = N.Pos1 N.+ (ListLength as)
 
 
 -- A constraint for square matrices.
-type family Square (shape :: MatrixShape) :: Constraint where
+type family Square (shape :: Shape) :: Constraint where
   Square ('MatrixShape g rs cs) = (ListLength rs ~ ListLength cs)
 
 
 -- A matrix shape for converting from one vector to another.
 -- This is the shape that, when right-multiplied by a column vector whose shape is from, produces a column vector whose shape is to.
-type family DivideVectors (to :: VectorShape) (from :: VectorShape) :: MatrixShape where
+type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
   DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
                                                              (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
                                                              (MapDiv (ListHead (f ': fs)) (t ': ts))
                                                              (MapMul (ListHead (f ': fs)) (MapInv (f ': fs)))
+  -- try to deal with matrix/matrix division?
 
 
-
-type family HorizontallyConcatenable (s1 :: MatrixShape) (s2 :: MatrixShape) :: Constraint where
+type family HorizontallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, rs1 ~ rs2)
+  -- adding a vector
 
-type family HorizontalConcatenation (s1 :: MatrixShape) (s2 :: MatrixShape) :: MatrixShape where
+type family HorizontalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   HorizontalConcatenation ('MatrixShape g rs1 cs) ('MatrixShape g rs2 cs) = 'MatrixShape g (ListAppend rs1 rs2) cs
+  -- adding a vector
 
-type family VerticallyConcatenable (s1 :: MatrixShape) (s2 :: MatrixShape) :: Constraint where
+type family VerticallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, cs1 ~ cs2)
+  -- adding a vector
 
-type family VerticalConcatenation (s1 :: MatrixShape) (s2 :: MatrixShape) :: MatrixShape where
+type family VerticalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   VerticalConcatenation ('MatrixShape g rs cs1) ('MatrixShape g rs cs2) = 'MatrixShape g rs (ListAppend cs1 cs2)
-
+  -- adding a vector
 
 
 -- Extract the dimension of an element from a shape.
-type family MatrixElement (shape :: MatrixShape) (row :: NN.Nat) (col :: NN.Nat) :: Dimension where
+type family MatrixElement (shape :: Shape) (row :: NN.Nat) (col :: NN.Nat) :: Dimension where
   MatrixElement ('MatrixShape g rs cs) i j = g * ((ElementAt (DOne ': rs) i) * (ElementAt (DOne ': cs) j))
 
 
 -- Extract the dimension of an element from a vector shape.
-type family VectorElement (shape :: VectorShape) (i :: NN.Nat) :: Dimension where
+type family VectorElement (shape :: Shape) (i :: NN.Nat) :: Dimension where
   VectorElement ('VectorShape d ds) NN.Z = d
   VectorElement ('VectorShape d ds) (NN.S i) = ElementAt ds i
 
 -- Extract a row from a matrix.
-type family MatrixRow (shape :: MatrixShape) (row :: NN.Nat) :: VectorShape where
+type family MatrixRow (matrix :: Shape) (row :: NN.Nat) :: Shape where
   MatrixRow ('MatrixShape g rs cs) row = 'VectorShape (g * ElementAt (DOne ': rs) row) (MapMul (g * ElementAt (DOne ': rs) row) cs)
 
 -- Extract a column from a matrix.
-type family MatrixColumn (shape :: MatrixShape) (col :: NN.Nat) :: VectorShape where
+type family MatrixColumn (matrix :: Shape) (col :: NN.Nat) :: Shape where
   MatrixColumn ('MatrixShape g rs cs) col = 'VectorShape (g * ElementAt (DOne ': cs) col) (MapMul (g * ElementAt (DOne ': cs) col) rs)
 
 -- Invert all dimensions in a list of dimensions.
