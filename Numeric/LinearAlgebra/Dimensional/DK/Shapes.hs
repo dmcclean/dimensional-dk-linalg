@@ -5,8 +5,6 @@
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE ConstraintKinds #-}
 
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -16,7 +14,7 @@
 module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   MatrixShape,
   VectorShape,
-  Product,
+  HasProduct,
   ShapeProduct,
   ShapeTranspose,
   ShapeInverse,
@@ -47,12 +45,15 @@ data MatrixShape = MatrixShape Dimension [Dimension] [Dimension]
 data VectorShape = VectorShape (NonEmpty Dimension)
 
 
--- Define the type of matrix products.
-class Product (ldims :: MatrixShape) (rdims :: MatrixShape) where
-  type ShapeProduct ldims rdims :: MatrixShape
+-- Define the circumstances under which matrices have a product.
+type family HasProduct (ldims :: MatrixShape) (rdims :: MatrixShape) :: Constraint where
+  HasProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ MapInv rs2)
 
-instance (lcols ~ MapInv rrows) => Product ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) where
-  type ShapeProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape (g1 * g2) rs1 cs2
+
+-- Define the shape of matrix products.
+-- This is defined even where the product doesn't exist (non-matching dimensions or sizes), but no problem arises because you can't call the actual term-level product method at such shapes.
+type family ShapeProduct (ldims :: MatrixShape) (rdims :: MatrixShape) :: MatrixShape where
+  ShapeProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape (g1 * g2) rs1 cs2
 
 
 -- Define the shape of matrix transposition.
@@ -67,7 +68,7 @@ type family ShapeInverse (mdims :: MatrixShape) :: MatrixShape where
 
 
 -- Define the type of a matrix determinant.
--- (This is defined even where the determinant doesn't exist (non-square shapes), but no problem arises because you can't call the actual term-level determinant method at non-square shapes.
+-- This is defined even where the determinant doesn't exist (non-square shapes), but no problem arises because you can't call the actual term-level determinant method at non-square shapes.
 type family ShapeDeterminant (shape :: MatrixShape) :: Dimension where
   ShapeDeterminant ('MatrixShape g rs cs) = g * ((DimProduct rs) * (DimProduct cs))
 
