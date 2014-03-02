@@ -24,7 +24,6 @@ library
   build-depends:       base < 5,
                        time < 1.5,
                        numtype-dk < 0.3,
-                       dimensional-dk,
-                       semigroups
+                       dimensional-dk
   -- hs-source-dirs:      
   default-language:    Haskell2010

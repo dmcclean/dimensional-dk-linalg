@@ -43,14 +43,13 @@ import GHC.Exts (Constraint)
 import Numeric.Units.Dimensional.DK.Prelude
 import qualified Prelude as P
 import qualified Numeric.NumType.DK as N
-import Data.List.NonEmpty (NonEmpty(..))
 
 -- define a data kind for matrix shapes
 -- a matrix shape is a single global dimension, an n-1 list of row dimesnions, and an m-1 list of column dimensions
 data MatrixShape = MatrixShape Dimension [Dimension] [Dimension]
 
 -- define a data kind for vector shapes
-data VectorShape = VectorShape (NonEmpty Dimension)
+data VectorShape = VectorShape Dimension [Dimension]
 
 
 type family ShapeScale (d :: Dimension) (s :: MatrixShape) :: MatrixShape where
@@ -113,7 +112,7 @@ type family ShapeCols (shape :: MatrixShape) :: N.NumType where
 
 
 type family VectorLength (shape :: VectorShape) :: N.NumType where 
-  VectorLength ('VectorShape (a :| as)) = N.Pos1 N.+ (ListLength as)
+  VectorLength ('VectorShape a as) = N.Pos1 N.+ (ListLength as)
 
 
 -- A constraint for square matrices.
@@ -124,10 +123,10 @@ type family Square (shape :: MatrixShape) :: Constraint where
 -- A matrix shape for converting from one vector to another.
 -- This is the shape that, when right-multiplied by a column vector whose shape is from, produces a column vector whose shape is to.
 type family DivideVectors (to :: VectorShape) (from :: VectorShape) :: MatrixShape where
-  DivideVectors ('VectorShape (t :| ts)) ('VectorShape (f :| fs)) = 'MatrixShape 
-                                                                       (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
-                                                                       (MapDiv (ListHead (f ': fs)) (t ': ts))
-                                                                       (MapMul (ListHead (f ': fs)) (MapInv (f ': fs)))
+  DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
+                                                             (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
+                                                             (MapDiv (ListHead (f ': fs)) (t ': ts))
+                                                             (MapMul (ListHead (f ': fs)) (MapInv (f ': fs)))
 
 
 
@@ -153,8 +152,8 @@ type family MatrixElement (shape :: MatrixShape) (row :: N.NumType) (col :: N.Nu
 -- Extract the dimension of an element from a vector shape.
 -- TODO: define second case once NumType has been re-arranged.
 type family VectorElement (shape :: VectorShape) (i :: N.NumType) :: Dimension where
-  VectorElement ('VectorShape (d :| ds)) N.Zero = d
---type instance VectorElement (d :| ds) (N.S i) = ElementAt ds i
+  VectorElement ('VectorShape d ds) N.Zero = d
+--type instance VectorElement ('VectorShape d ds) (N.S i) = ElementAt ds i
 
 
 
