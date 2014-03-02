@@ -143,9 +143,15 @@ import qualified Numeric.NumType.DK as N
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 import Data.Proxy
 
+import Numeric.Matrix as M
+
 data DimMat (shape :: Shape) a where
-  DimMat :: [[a]] -> DimMat ('MatrixShape g rs cs) a
-  DimVec :: [a] -> DimMat ('VectorShape d ds) a
+  DimMat :: M.Matrix a -> DimMat ('MatrixShape g rs cs) a
+  DimVec :: M.Matrix a -> DimMat ('VectorShape d ds) a
+
+type ValidElement = M.MatrixElement
+
+deriving instance (Show a, ValidElement a) => Show (DimMat s a)
 
 {-
 -- | Data.Packed.Vector.'H.@>'
@@ -180,14 +186,14 @@ normInf (DimMat a) = Dimensional (H.pnorm H.Infinity a)
 
 vXm and vXv (called dot) might be supported in the future too
 -}
-multiply :: (HasProduct s1 s2)
+multiply :: (HasProduct s1 s2, ValidElement a)
     => DimMat s1 a -> DimMat s2 a
     -> DimMat (ShapeProduct s1 s2) a
-multiply (DimMat a) (DimMat b) = undefined
+multiply (DimMat a) (DimMat b) = DimMat (M.times a b)
 --multiply (DimMat a) (DimVec b) = DimVec (H.mXv a b)
 
 infixl 7 <>
-(<>) :: (HasProduct s1 s2)
+(<>) :: (HasProduct s1 s2, ValidElement a)
     => DimMat s1 a -> DimMat s2 a
     -> DimMat (ShapeProduct s1 s2) a
 (<>) = multiply
@@ -212,11 +218,11 @@ expm = undefined
 scale :: Quantity d a -> DimMat s a -> DimMat (ShapeScale d s) a
 scale = undefined
 
-add :: DimMat s a -> DimMat s a -> DimMat s a
-add = undefined
+add :: (ValidElement a) => DimMat s a -> DimMat s a -> DimMat s a
+add (DimMat x) (DimMat y) = DimMat (M.plus x y)
 
-sub :: DimMat s a -> DimMat s a -> DimMat s a
-sub = undefined
+sub :: (ValidElement a) => DimMat s a -> DimMat s a -> DimMat s a
+sub (DimMat x) (DimMat y) = DimMat (M.minus x y)
 
 equal :: (Eq a) => DimMat s a -> DimMat s a -> Bool
 equal = undefined
