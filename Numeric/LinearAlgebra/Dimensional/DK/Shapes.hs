@@ -32,6 +32,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   VerticallyConcatenable,
   HorizontalConcatenation,
   VerticalConcatenation,
+  VectorConcatenation,
   MatrixElement,
   VectorElement,
   MatrixRow,
@@ -146,6 +147,8 @@ type family VerticalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   VerticalConcatenation ('MatrixShape g rs cs1) ('MatrixShape g rs cs2) = 'MatrixShape g rs (ListAppend cs1 cs2)
   -- adding a vector
 
+type family VectorConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
+  VectorConcatenation ('VectorShape d1 ds1) ('VectorShape d2 ds2) = 'VectorShape d1 (ListAppend ds1 (d2 ': ds2))
 
 -- Extract the dimension of an element from a shape.
 type family MatrixElement (shape :: Shape) (row :: NN.Nat) (col :: NN.Nat) :: Dimension where

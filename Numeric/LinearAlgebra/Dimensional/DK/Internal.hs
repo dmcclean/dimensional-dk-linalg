@@ -57,6 +57,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.Internal
    arctan2,
    hconcat,
    vconcat,
+   concat,
    konst,
    zeroes,
    -- build, atIndex, minIndex, maxIndex, minElement, maxElement,
@@ -232,6 +233,9 @@ hconcat = undefined
 
 vconcat :: (VerticallyConcatenable s1 s2) => DimMat s1 a -> DimMat s2 a -> DimMat (VerticalConcatenation s1 s2) a
 vconcat = undefined
+
+concat :: DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
+concat = undefined
 
 rank :: DimMat s a -> Integer
 rank = undefined
