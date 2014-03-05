@@ -57,7 +57,7 @@ type family ShapeScale (d :: Dimension) (s :: Shape) :: Shape where
 
 -- Define the circumstances under which an inner product exists.
 type family HasProduct (ldims :: Shape) (rdims :: Shape) :: Constraint where
-  HasProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ MapInv rs2)
+  HasProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ MapRecip rs2)
   -- other entries for matrix/vector products
 
 -- Define the shape of inner products.
@@ -74,7 +74,7 @@ type family ShapeTranspose (mdims :: Shape) :: Shape where
 
 -- Define the shape of matrix inversion.
 type family ShapeInverse (mdims :: Shape) :: Shape where
-  ShapeInverse ('MatrixShape g rs cs) = 'MatrixShape (Inverse g) (MapInv cs) (MapInv rs)
+  ShapeInverse ('MatrixShape g rs cs) = 'MatrixShape (Recip g) (MapRecip cs) (MapRecip rs)
 
 
 -- Define the type of a matrix determinant.
@@ -91,11 +91,11 @@ type family ShapeDimensionless (shape :: Shape) :: Shape where
 
 -- Constrain matrix shapes that have an identity matrix.
 type family HasIdentity (shape :: Shape) :: Constraint where
-  HasIdentity ('MatrixShape g rs cs) = (g ~ DOne, rs ~ MapInv cs)
+  HasIdentity ('MatrixShape g rs cs) = (g ~ DOne, rs ~ MapRecip cs)
 
 
 type family HasTrace (shape :: Shape) :: Constraint where
-  HasTrace ('MatrixShape g rs cs) = (rs ~ MapInv cs)
+  HasTrace ('MatrixShape g rs cs) = (rs ~ MapRecip cs)
 
 type family ShapeTrace (shape :: Shape) :: Dimension where
   ShapeTrace ('MatrixShape g rs cs) = g
@@ -126,7 +126,7 @@ type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
   DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
                                                              (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
                                                              (MapDiv (ListHead (f ': fs)) (t ': ts))
-                                                             (MapMul (ListHead (f ': fs)) (MapInv (f ': fs)))
+                                                             (MapMul (ListHead (f ': fs)) (MapRecip (f ': fs)))
   -- try to deal with matrix/matrix division?
 
 
@@ -166,9 +166,9 @@ type family MatrixColumn (matrix :: Shape) (col :: NN.Nat) :: Shape where
   MatrixColumn ('MatrixShape g rs cs) col = 'VectorShape (g * ElementAt (DOne ': cs) col) (MapMul (g * ElementAt (DOne ': cs) col) rs)
 
 -- Invert all dimensions in a list of dimensions.
-type family MapInv (dims :: [Dimension]) :: [Dimension] where
-  MapInv '[] = '[]
-  MapInv (x ': xs) = (Inverse x) ': (MapInv xs)
+type family MapRecip (dims :: [Dimension]) :: [Dimension] where
+  MapRecip '[] = '[]
+  MapRecip (x ': xs) = (Recip x) ': (MapRecip xs)
 
 
 -- Convert all dimensions in a list of dimensions to dimensionless.

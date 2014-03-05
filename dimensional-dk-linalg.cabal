@@ -23,7 +23,7 @@ library
   -- other-extensions:    
   build-depends:       base < 5,
                        time < 1.5,
-                       numtype-dk < 0.4,
+                       numtype-dk,
                        dimensional-dk,
                        bed-and-breakfast
   -- hs-source-dirs:      
