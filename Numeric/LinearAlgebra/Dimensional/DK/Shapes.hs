@@ -133,7 +133,9 @@ type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
 
 type family HorizontallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, rs1 ~ rs2)
-  -- adding a vector
+  HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('VectorShape r2 rs2)     = (g1 ~ r2, rs2 ~ MapMul g1 rs1)
+  HorizontallyConcatenable ('VectorShape r1 rs1)     ('MatrixShape g2 rs2 cs2) = (g2 ~ r1, rs1 ~ MapMul g2 rs2)
+  HorizontallyConcatenable ('VectorShape r1 rs1)     ('VectorShape r2 rs2)     = (rs1 ~ MapMul (r2 / r1) rs2)
 
 type family HorizontalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   HorizontalConcatenation ('MatrixShape g rs1 cs) ('MatrixShape g rs2 cs) = 'MatrixShape g (ListAppend rs1 rs2) cs
