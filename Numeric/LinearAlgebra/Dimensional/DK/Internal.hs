@@ -212,8 +212,8 @@ pinvTol tol (DimMat a) = DimMat (H.pinvTol tol a)
 
 -}
 
-det :: (Square s) => DimMat s a -> Quantity (ShapeDeterminant s) a
-det = undefined
+det :: (Square s, KnownDimension (ShapeDeterminant s), ValidElement a) => DimMat s a -> Quantity (ShapeDeterminant s) a
+det (DimMat m) = M.det m *~ siUnit
 
 expm :: (s ~ ShapeProduct s s, HasProduct s s) => DimMat s a -> DimMat s a
 expm = undefined
