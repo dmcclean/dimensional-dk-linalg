@@ -161,16 +161,17 @@ deriving instance (Show a, ValidElement a) => Show (DimMat s a)
      => DimMat ('VectorShape d ds) a
      -> Proxy n
      -> Quantity (VectorElement ('VectorShape d ds) n) a
-(DimVec v) @> n = (v `M.at` (asInt n,1)) *~ siUnit
+(DimVec v) @> n = (v `M.at` (asIntFrom1 n,1)) *~ siUnit
 
 (@@>) :: (NN.KnownNat nr, NN.KnownNat nc, KnownDimension (MatrixElement ('MatrixShape g rs cs) nr nc), Fractional a, ValidElement a)
     => DimMat ('MatrixShape g rs cs) a
     -> (Proxy nr, Proxy nc)
     -> Quantity (MatrixElement ('MatrixShape g rs cs) nr nc) a
-DimMat m @@> (nr,nc) = (m `M.at` (asInt nr, asInt nc)) *~ siUnit
+DimMat m @@> (nr,nc) = (m `M.at` (asIntFrom1 nr, asIntFrom1 nc)) *~ siUnit
 
-asInt :: (NN.KnownNat n) => Proxy n -> Int
-asInt = fromInteger . (P.+ 1) . NN.natVal
+asInt, asIntFrom1 :: (NN.KnownNat n) => Proxy n -> Int
+asInt = fromInteger . NN.natVal
+asIntFrom1 = (P.+ 1) . asInt
 
 {-
 norm1 :: (sh ~ [r11 ': rs,ci], rs ~ MapConst r11 rs, ci ~ MapConst DOne ci, a ~ H.RealOf a)
@@ -200,8 +201,8 @@ infixl 7 <>
     -> DimMat (ShapeProduct s1 s2) a
 (<>) = multiply
 
-trans :: DimMat s a -> DimMat (ShapeTranspose s) a
-trans (DimMat a) = undefined
+trans :: (ValidElement a) => DimMat s a -> DimMat (ShapeTranspose s) a
+trans (DimMat m) = DimMat $ M.transpose m
 
 {-
 pinvTol :: (PInv sh sh',
@@ -228,8 +229,9 @@ add (DimMat x) (DimMat y) = DimMat (M.plus x y)
 sub :: (ValidElement a) => DimMat s a -> DimMat s a -> DimMat s a
 sub (DimMat x) (DimMat y) = DimMat (M.minus x y)
 
-equal :: (Eq a) => DimMat s a -> DimMat s a -> Bool
-equal = undefined
+equal :: (Eq a, ValidElement a) => DimMat s a -> DimMat s a -> Bool
+equal (DimMat m1) (DimMat m2) = m1 == m2
+equal (DimVec v1) (DimVec v2) = v1 == v2
 
 hconcat :: (HorizontallyConcatenable s1 s2, ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (HorizontalConcatenation s1 s2) a
 hconcat (DimMat m1) (DimMat m2) = DimMat (m1 <|> m2)
@@ -249,11 +251,11 @@ concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
 rank :: DimMat s a -> Integer
 rank = undefined
 
-rows :: forall s a.(N.KnownNumType (ShapeRows s)) => DimMat s a -> Integer
-rows _ = N.toNum (Proxy :: Proxy (ShapeRows s))
+rows :: forall s a.(NN.KnownNat (ShapeRows s)) => DimMat s a -> Integer
+rows _ = NN.natVal (Proxy :: Proxy (ShapeRows s))
 
-cols :: forall s a.(N.KnownNumType (ShapeCols s)) => DimMat s a -> Integer
-cols _ = N.toNum (Proxy :: Proxy (ShapeCols s))
+cols :: forall s a.(NN.KnownNat (ShapeCols s)) => DimMat s a -> Integer
+cols _ = NN.natVal (Proxy :: Proxy (ShapeCols s))
 
 -- TODO: add a constraint that the row exists for better error message?
 row :: forall n s a d ds.(MatrixRow s n ~ 'VectorShape d ds) => Proxy n -> DimMat s a -> DimMat ('VectorShape d ds) a
@@ -294,15 +296,18 @@ konst (Dimensional a) = DimMat (H.konst a
 -}
 
 -- | identity matrix. The size is determined by the type.
-ident :: (HasIdentity s) => DimMat s a
-ident = undefined
+ident :: forall g rs cs s a.(s ~ 'MatrixShape g rs cs, HasIdentity s, NN.KnownNat (ShapeRows s), ValidElement a) => DimMat ('MatrixShape g rs cs) a
+ident = DimMat $ M.unit $ asInt (Proxy :: Proxy (ShapeRows s))
 
 -- | zero matrix. The size and dimension is determined by the type.
-zeroes :: forall s a.DimMat s a
-zeroes = undefined
+zeroes :: forall g rs cs s a.(s ~ 'MatrixShape g rs cs, NN.KnownNat (ShapeRows s), NN.KnownNat (ShapeCols s), ValidElement a) => DimMat ('MatrixShape g rs cs) a
+zeroes = DimMat $ M.matrix (r,c) (\(i,j) -> 0)
+           where
+             r = asInt (Proxy :: Proxy (ShapeRows s))
+             c = asInt (Proxy :: Proxy (ShapeCols s))
 
-trace :: (HasTrace s) => DimMat s a -> Quantity (ShapeTrace s) a
-trace = undefined
+trace :: (HasTrace s, Fractional a, ValidElement a) => DimMat s a -> Quantity (ShapeTrace s) a
+trace (DimMat m) = (P.sum $ M.trace m) *~ siUnit
 
 conj :: DimMat s a -> DimMat s a
 conj = undefined

@@ -103,17 +103,17 @@ type family ShapeTrace (shape :: Shape) :: Dimension where
 
 
 -- Define the type-level number of rows in a matrix.
-type family ShapeRows (shape :: Shape) :: N.NumType where
-  ShapeRows ('MatrixShape g rs cs) = N.Pos1 N.+ (ListLength rs)
+type family ShapeRows (shape :: Shape) :: NN.Nat where
+  ShapeRows ('MatrixShape g rs cs) = NN.S (ListLength rs)
 
 
 -- Define the type-level number of columns in a matrix.
-type family ShapeCols (shape :: Shape) :: N.NumType where
-  ShapeCols ('MatrixShape g rs cs) = N.Pos1 N.+ (ListLength cs)
+type family ShapeCols (shape :: Shape) :: NN.Nat where
+  ShapeCols ('MatrixShape g rs cs) = NN.S (ListLength cs)
 
 
-type family VectorLength (shape :: Shape) :: N.NumType where 
-  VectorLength ('VectorShape a as) = N.Pos1 N.+ (ListLength as)
+type family VectorLength (shape :: Shape) :: NN.Nat where 
+  VectorLength ('VectorShape a as) = NN.S (ListLength as)
 
 
 -- A constraint for square matrices.
@@ -212,9 +212,9 @@ type family ListHead (xs :: [k]) :: k where
 
 
 -- Get the length of a type-level list.
-type family ListLength (xs :: [k]) :: N.NumType where
-  ListLength '[] = N.Zero
-  ListLength (x ': xs) = N.Pos1 N.+ (ListLength xs)
+type family ListLength (xs :: [k]) :: NN.Nat where
+  ListLength '[] = NN.Z
+  ListLength (x ': xs) = NN.S (ListLength xs)
 
 
 type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
