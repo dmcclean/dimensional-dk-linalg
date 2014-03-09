@@ -157,32 +157,16 @@ type ValidElement = M.MatrixElement
 
 deriving instance (Show a, ValidElement a) => Show (DimMat s a)
 
-{-
--- | Data.Packed.Vector.'H.@>'
-(@>) :: (HNat2Integral i)
-    => DimMat '[units] a
-    -> Proxy i
-    -> Quantity (HLookupByHNat i units) a
-DimVec v @> i = Dimensional (v H.@> hNat2Integral i)
-
--- | Data.Packed.Matrix.'H.@@>'
-(@@>) :: (HNat2Integral i, HNat2Integral j, AtEq ri i ci j ty)
-    => DimMat [ri,ci] a
-    -> (Proxy i, Proxy j)
-    -> Quantity ty a
-DimMat m @@> (i,j) = Dimensional (m H.@@> (hNat2Integral i,hNat2Integral j))
-
--}
 (@>) :: (NN.KnownNat n, KnownDimension (VectorElement ('VectorShape d ds) n), Fractional a, ValidElement a)
      => DimMat ('VectorShape d ds) a
      -> Proxy n
      -> Quantity (VectorElement ('VectorShape d ds) n) a
 (DimVec v) @> n = (v `M.at` (asInt n,1)) *~ siUnit
 
-(@@>) :: (NN.KnownNat nr, NN.KnownNat nc, KnownDimension (S.MatrixElement ('MatrixShape g rs cs) nr nc), Fractional a, ValidElement a)
+(@@>) :: (NN.KnownNat nr, NN.KnownNat nc, KnownDimension (MatrixElement ('MatrixShape g rs cs) nr nc), Fractional a, ValidElement a)
     => DimMat ('MatrixShape g rs cs) a
     -> (Proxy nr, Proxy nc)
-    -> Quantity (KnownDimension (S.MatrixElement ('MatrixShape g rs cs) nr nc)) lskadfj
+    -> Quantity (MatrixElement ('MatrixShape g rs cs) nr nc) a
 DimMat m @@> (nr,nc) = (m `M.at` (asInt nr, asInt nc)) *~ siUnit
 
 asInt :: (NN.KnownNat n) => Proxy n -> Int
@@ -233,8 +217,10 @@ det = undefined
 expm :: (s ~ ShapeProduct s s, HasProduct s s) => DimMat s a -> DimMat s a
 expm = undefined
 
-scale :: Quantity d a -> DimMat s a -> DimMat (ShapeScale d s) a
-scale = undefined
+scale :: (Fractional a, ValidElement a)
+         => Quantity d a -> DimMat s a -> DimMat (ShapeScale d s) a
+scale x (DimMat m) = DimMat $ M.scale m (x /~ siUnit)
+scale x (DimVec v) = DimVec $ M.scale v (x /~ siUnit)
 
 add :: (ValidElement a) => DimMat s a -> DimMat s a -> DimMat s a
 add (DimMat x) (DimMat y) = DimMat (M.plus x y)

@@ -135,7 +135,7 @@ type family HorizontallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint w
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (rs1 ~ rs2)
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('VectorShape r2 rs2)     = (g1 ~ r2, rs2 ~ MapMul g1 rs1)
   HorizontallyConcatenable ('VectorShape r1 rs1)     ('MatrixShape g2 rs2 cs2) = (g2 ~ r1, rs1 ~ MapMul g2 rs2)
-  HorizontallyConcatenable ('VectorShape r1 rs1)     ('VectorShape r2 rs2)     = (rs1 ~ MapMul (r2 / r1) rs2)
+  HorizontallyConcatenable ('VectorShape r1 rs1)     ('VectorShape r2 rs2)     = (rs1 ~ MapMul (r1 / r2) rs2)
 
 type family HorizontalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   HorizontalConcatenation ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape g1 (ListAppend rs1 (MapMul (g2 / g1) rs2)) cs1
@@ -147,7 +147,7 @@ type family VerticallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint whe
   VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ cs2)
   VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('VectorShape c2 cs2)     = (g1 ~ c2, cs2 ~ MapMul g1 cs1)
   VerticallyConcatenable ('VectorShape c1 cs1)     ('MatrixShape g2 rs2 cs2) = (g2 ~ c1, cs1 ~ MapMul g2 cs2)
-  VerticallyConcatenable ('VectorShape c1 cs1)     ('VectorShape c2 cs2)     = (cs1 ~ MapMul (c2 / c1) cs2)
+  VerticallyConcatenable ('VectorShape c1 cs1)     ('VectorShape c2 cs2)     = (cs1 ~ MapMul (c1 / c2) cs2)
 
 type family VerticalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
   VerticalConcatenation ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2)  = 'MatrixShape g1 rs1 (ListAppend cs1 (MapMul (g2 / g1) cs2))
