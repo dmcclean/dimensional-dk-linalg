@@ -145,12 +145,14 @@ type family HorizontalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
 
 type family VerticallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ cs2)
-  -- adding a vector to a matrix
+  VerticallyConcatenable ('MatrixShape g1 rs1 cs1) ('VectorShape c2 cs2)     = (g1 ~ c2, cs2 ~ MapMul g1 cs1)
+  VerticallyConcatenable ('VectorShape c1 cs1)     ('MatrixShape g2 rs2 cs2) = (g2 ~ c1, cs1 ~ MapMul g2 cs2)
   VerticallyConcatenable ('VectorShape c1 cs1)     ('VectorShape c2 cs2)     = (cs1 ~ MapMul (c2 / c1) cs2)
 
 type family VerticalConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where
-  VerticalConcatenation ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape g1 rs1 (ListAppend cs1 (MapMul (g2 / g1) cs2))
-  -- adding a vector to a matrix
+  VerticalConcatenation ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2)  = 'MatrixShape g1 rs1 (ListAppend cs1 (MapMul (g2 / g1) cs2))
+  -- VerticalConcatenation ('MatrixShape g1 rs1 cs1) ('VectorShape c2 cs2)     = 'MatrixShape ...
+  -- VerticalConcatenation ('VectorShape c1 cs1)     ('MatrixShape g2 rs2 cs2) = 'MatrixShape ...
   VerticalConcatenation ('VectorShape c1 cs1)   ('VectorShape c2 cs2)   = 'MatrixShape c1 '[c2 / c1] (MapDiv c1 cs1)
 
 type family VectorConcatenation (s1 :: Shape) (s2 :: Shape) :: Shape where

@@ -170,6 +170,11 @@ DimVec v @> i = Dimensional (v H.@> hNat2Integral i)
 DimMat m @@> (i,j) = Dimensional (m H.@@> (hNat2Integral i,hNat2Integral j))
 
 -}
+(@>) :: (KnownDimension (VectorElement ('VectorShape d ds) i), Fractional a, M.MatrixElement a)
+     => DimMat ('VectorShape d ds) a
+     -> Proxy i
+     -> Quantity (VectorElement ('VectorShape d ds) i) a
+(DimVec v) @> i = (v `at` (1,1)) *~ siUnit
 
 {-
 norm1 :: (sh ~ [r11 ': rs,ci], rs ~ MapConst r11 rs, ci ~ MapConst DOne ci, a ~ H.RealOf a)
