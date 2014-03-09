@@ -143,10 +143,11 @@ import qualified Numeric.NumType.DK as N
 import qualified Numeric.NumType.DK.Nat as NN
 
 
-import Numeric.LinearAlgebra.Dimensional.DK.Shapes
+import Numeric.LinearAlgebra.Dimensional.DK.Shapes as S
 import Data.Proxy
 
-import Numeric.Matrix as M
+import qualified Numeric.Matrix as M
+import Numeric.Matrix ((<|>), (<->))
 
 data DimMat (shape :: Shape) a where
   DimMat :: M.Matrix a -> DimMat ('MatrixShape g rs cs) a
@@ -172,11 +173,20 @@ DimVec v @> i = Dimensional (v H.@> hNat2Integral i)
 DimMat m @@> (i,j) = Dimensional (m H.@@> (hNat2Integral i,hNat2Integral j))
 
 -}
-(@>) :: (NN.KnownNat n, KnownDimension (VectorElement ('VectorShape d ds) n), Fractional a, M.MatrixElement a)
+(@>) :: (NN.KnownNat n, KnownDimension (VectorElement ('VectorShape d ds) n), Fractional a, ValidElement a)
      => DimMat ('VectorShape d ds) a
      -> Proxy n
      -> Quantity (VectorElement ('VectorShape d ds) n) a
-(DimVec v) @> n = (v `at` (fromInteger . (P.+ 1) . NN.natVal $ n,1)) *~ siUnit
+(DimVec v) @> n = (v `M.at` (asInt n,1)) *~ siUnit
+
+(@@>) :: (NN.KnownNat nr, NN.KnownNat nc, KnownDimension (S.MatrixElement ('MatrixShape g rs cs) nr nc), Fractional a, ValidElement a)
+    => DimMat ('MatrixShape g rs cs) a
+    -> (Proxy nr, Proxy nc)
+    -> Quantity (KnownDimension (S.MatrixElement ('MatrixShape g rs cs) nr nc)) lskadfj
+DimMat m @@> (nr,nc) = (m `M.at` (asInt nr, asInt nc)) *~ siUnit
+
+asInt :: (NN.KnownNat n) => Proxy n -> Int
+asInt = fromInteger . (P.+ 1) . NN.natVal
 
 {-
 norm1 :: (sh ~ [r11 ': rs,ci], rs ~ MapConst r11 rs, ci ~ MapConst DOne ci, a ~ H.RealOf a)
@@ -235,19 +245,19 @@ sub (DimMat x) (DimMat y) = DimMat (M.minus x y)
 equal :: (Eq a) => DimMat s a -> DimMat s a -> Bool
 equal = undefined
 
-hconcat :: (HorizontallyConcatenable s1 s2, M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (HorizontalConcatenation s1 s2) a
+hconcat :: (HorizontallyConcatenable s1 s2, ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (HorizontalConcatenation s1 s2) a
 hconcat (DimMat m1) (DimMat m2) = DimMat (m1 <|> m2)
 hconcat (DimMat m1) (DimVec v2) = DimMat (m1 <|> v2)
 hconcat (DimVec v1) (DimMat m2) = DimMat (v1 <|> m2)
 hconcat (DimVec v1) (DimVec v2) = DimMat (v1 <|> v2)
 
-vconcat :: (VerticallyConcatenable s1 s2, M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VerticalConcatenation s1 s2) a
+vconcat :: (VerticallyConcatenable s1 s2, ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VerticalConcatenation s1 s2) a
 vconcat (DimMat m1) (DimMat m2) = DimMat (m1 <-> m2)
-vconcat (DimMat m1) (DimVec v2) = undefined --DimMat (m1 <-> transpose v2)
-vconcat (DimVec v1) (DimMat m2) = undefined --DimMat (transpose v1 <-> m2)
-vconcat (DimVec v1) (DimVec v2) = DimMat (transpose v1 <-> transpose v2)
+vconcat (DimMat m1) (DimVec v2) = undefined --DimMat (m1 <-> M.transpose v2)
+vconcat (DimVec v1) (DimMat m2) = undefined --DimMat (M.transpose v1 <-> m2)
+vconcat (DimVec v1) (DimVec v2) = DimMat (M.transpose v1 <-> M.transpose v2)
 
-concat :: (M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
+concat :: (ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
 concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
 
 rank :: DimMat s a -> Integer
