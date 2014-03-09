@@ -148,7 +148,7 @@ import Numeric.Matrix as M
 
 data DimMat (shape :: Shape) a where
   DimMat :: M.Matrix a -> DimMat ('MatrixShape g rs cs) a
-  DimVec :: M.Matrix a -> DimMat ('VectorShape d ds) a
+  DimVec :: M.Matrix a -> DimMat ('VectorShape d ds) a -- as a column vector
 
 type ValidElement = M.MatrixElement
 
@@ -228,14 +228,20 @@ sub (DimMat x) (DimMat y) = DimMat (M.minus x y)
 equal :: (Eq a) => DimMat s a -> DimMat s a -> Bool
 equal = undefined
 
-hconcat :: (HorizontallyConcatenable s1 s2) => DimMat s1 a -> DimMat s2 a -> DimMat (HorizontalConcatenation s1 s2) a
-hconcat = undefined
+hconcat :: (HorizontallyConcatenable s1 s2, M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (HorizontalConcatenation s1 s2) a
+hconcat (DimMat m1) (DimMat m2) = DimMat (m1 <|> m2)
+hconcat (DimMat m1) (DimVec v2) = DimMat (m1 <|> v2)
+hconcat (DimVec v1) (DimMat m2) = DimMat (v1 <|> m2)
+hconcat (DimVec v1) (DimVec v2) = DimMat (v1 <|> v2)
 
-vconcat :: (VerticallyConcatenable s1 s2) => DimMat s1 a -> DimMat s2 a -> DimMat (VerticalConcatenation s1 s2) a
-vconcat = undefined
+vconcat :: (VerticallyConcatenable s1 s2, M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VerticalConcatenation s1 s2) a
+vconcat (DimMat m1) (DimMat m2) = DimMat (m1 <-> m2)
+vconcat (DimMat m1) (DimVec v2) = undefined --DimMat (m1 <-> transpose v2)
+vconcat (DimVec v1) (DimMat m2) = undefined --DimMat (transpose v1 <-> m2)
+vconcat (DimVec v1) (DimVec v2) = DimMat (transpose v1 <-> transpose v2)
 
-concat :: DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
-concat = undefined
+concat :: (M.MatrixElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
+concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
 
 rank :: DimMat s a -> Integer
 rank = undefined
