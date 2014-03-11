@@ -126,8 +126,8 @@ type family Square (shape :: Shape) :: Constraint where
 type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
   DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
                                                              (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
-                                                             (MapDiv (ListHead (f ': fs)) (t ': ts))
-                                                             (MapMul (ListHead (f ': fs)) (MapRecip (f ': fs)))
+                                                             (MapDiv (ListHead (f ': fs)) ts)
+                                                             (MapMul (ListHead (f ': fs)) (MapRecip fs))
   -- try to deal with matrix/matrix division?
 
 

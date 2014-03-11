@@ -20,4 +20,9 @@ type State = [vecShape| DPlaneAngle, DAngularVelocity, DLength, DVelocity |]
 
 type Output = [vecShape| DPlaneAngle, DLength |]
 
+i = undefined :: DimMat State Double
+o = undefined :: DimMat Output Double
+
 type A = DivideVectors Output State
+
+a = zeroes :: DimMat A Double
