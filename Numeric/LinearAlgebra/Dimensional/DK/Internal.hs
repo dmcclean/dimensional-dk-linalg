@@ -212,13 +212,13 @@ pinvTol tol (DimMat a) = DimMat (H.pinvTol tol a)
 
 -}
 
-det :: (Square s, KnownDimension (ShapeDeterminant s), ValidElement a) => DimMat s a -> Quantity (ShapeDeterminant s) a
+det :: (Square s, KnownDimension (ShapeDeterminant s), Fractional a, ValidElement a) => DimMat s a -> Quantity (ShapeDeterminant s) a
 det (DimMat m) = M.det m *~ siUnit
 
 expm :: (s ~ ShapeProduct s s, HasProduct s s) => DimMat s a -> DimMat s a
 expm = undefined
 
-scale :: (Fractional a, ValidElement a)
+scale :: (Fractional a, ValidElement a, KnownDimension d)
          => Quantity d a -> DimMat s a -> DimMat (ShapeScale d s) a
 scale x (DimMat m) = DimMat $ M.scale m (x /~ siUnit)
 scale x (DimVec v) = DimVec $ M.scale v (x /~ siUnit)
@@ -306,7 +306,7 @@ zeroes = DimMat $ M.matrix (r,c) (\(i,j) -> 0)
              r = asInt (Proxy :: Proxy (ShapeRows s))
              c = asInt (Proxy :: Proxy (ShapeCols s))
 
-trace :: (HasTrace s, Fractional a, ValidElement a) => DimMat s a -> Quantity (ShapeTrace s) a
+trace :: (HasTrace s, Fractional a, ValidElement a, KnownDimension (ShapeTrace s)) => DimMat s a -> Quantity (ShapeTrace s) a
 trace (DimMat m) = (P.sum $ M.trace m) *~ siUnit
 
 conj :: DimMat s a -> DimMat s a
