@@ -5,9 +5,8 @@
 -- which constructs a matrix which has dimensions stored.
 module Numeric.LinearAlgebra.Dimensional.DK.QuasiQuotes
 (
-  vecD,
-  parse,
-  identifierList
+  vec,
+  vecShape,
 ) where
 
 import Language.Haskell.TH
@@ -16,25 +15,23 @@ import Language.Haskell.TH as TH
 import Language.Haskell.TH.Quote as TH
 import Language.Haskell.TH.Syntax as TH
 import Language.Haskell.TH.Quote
+import Language.Haskell.Meta.Parse as Meta
 
 import Numeric.Units.Dimensional.DK (Quantity, Dimension, DLength, DMass)
 import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..))
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 
-import Text.Parsec
-import qualified Text.Parsec.Token as P
-import Text.Parsec.String
-import Text.Parsec.Language (haskellDef)
+import Data.List.Split
 
 
-vecD = QuasiQuoter {
+vec = QuasiQuoter {
   quoteExp = error "vecD",
   quotePat = error "vecD",
   quoteDec = error "vecD",
   quoteType = parseVectorType
 }
 
-vecShapeD = QuasiQuoter {
+vecShape = QuasiQuoter {
   quoteExp = error "vecShapeD",
   quotePat = error "vecShapeD",
   quoteDec = error "vecShapeD",
@@ -43,35 +40,22 @@ vecShapeD = QuasiQuoter {
 
 parseVectorType :: String -> Q Type
 parseVectorType s = [t| DimMat $(parseVectorShapeType s) |]
+--parseVectorType s = [t| DimMat ('VectorShape $(parseDimensionType' s) '[]) |]
 
 parseVectorShapeType :: String -> Q Type
-parseVectorShapeType s = case parse' (whiteSpace >> identifierList) s of
-                           Left err -> fail $ show err
-                           Right names -> makeVectorShapeType $ fmap parseDimensionType names
+parseVectorShapeType s = let dimTypes = fmap parseDimensionType $ splitOn "," s
+                          in makeVectorShapeType dimTypes
 
 makeVectorShapeType :: [Q Type] -> Q Type
 makeVectorShapeType (d : ds) = [t| 'VectorShape $(d) $(makeTypeLevelList ds) |]
 makeVectorShapeType _ = fail "Empty vectors not permitted."
 
 parseDimensionType :: String -> Q Type
-parseDimensionType n = do
-                         n' <- lookupTypeName n
-                         case n' of
-                           Nothing -> fail ("Dimension '" ++ n ++ "' not found.")
-                           Just n'' -> return $ ConT n''
+parseDimensionType s = do
+                          case (Meta.parseType s) of
+                            Left err -> fail $ show err
+                            Right t -> return t
 
 makeTypeLevelList :: [Q Type] -> Q Type
 makeTypeLevelList (t : ts) = [t| $(t) ': $(makeTypeLevelList ts) |]
 makeTypeLevelList [] = [t| '[] |]
-
-lexer = P.makeTokenParser haskellDef
-
-whiteSpace = P.whiteSpace lexer
-identifier = P.identifier lexer
-commaSep1 = P.commaSep1 lexer
-
-identifierList :: Parser [String]
-identifierList = commaSep1 identifier
-
-parse' :: Parser t -> String -> Either ParseError t
-parse' p = parse p "QuasiQuote"
