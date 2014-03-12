@@ -194,7 +194,7 @@ multiply :: (HasProduct s1 s2, ValidElement a)
     => DimMat s1 a -> DimMat s2 a
     -> DimMat (ShapeProduct s1 s2) a
 multiply (DimMat a) (DimMat b) = DimMat (M.times a b)
---multiply (DimMat a) (DimVec b) = DimVec (H.mXv a b)
+multiply (DimMat a) (DimVec b) = DimVec (M.times a b)
 
 infixl 7 <>
 (<>) :: (HasProduct s1 s2, ValidElement a)
