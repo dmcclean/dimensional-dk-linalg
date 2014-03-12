@@ -6,12 +6,13 @@ module Test where
 
 import qualified Prelude as P
 import Numeric.Units.Dimensional.DK.Prelude
+import Numeric.Units.Dimensional.DK.NonSI
 import Numeric.LinearAlgebra.Dimensional.DK.Internal
 import Numeric.LinearAlgebra.Dimensional.DK.QuasiQuotes
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 
-frog :: [vec|  DLength  , DMass,DAmountOfSubstance, DLength/DTime |] P.Double
-frog = undefined
+frog :: [vec|  DLength  , DMass,DLength/DTime |] P.Double
+frog = [vec| 3 *~ meter, 41.2 *~ kilo gram, 11.2 *~ knot |]
 
 cow :: [vec| DLength * DAmountOfSubstance |] P.Double
 cow = undefined

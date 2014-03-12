@@ -18,14 +18,14 @@ import Language.Haskell.TH.Quote
 import Language.Haskell.Meta.Parse as Meta
 
 import Numeric.Units.Dimensional.DK (Quantity, Dimension, DLength, DMass)
-import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..))
+import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..), vecSingleton, vecCons)
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 
 import Data.List.Split
 
 
 vec = QuasiQuoter {
-  quoteExp = error "vecD",
+  quoteExp = parseVectorExp,
   quotePat = error "vecD",
   quoteDec = error "vecD",
   quoteType = parseVectorType
@@ -38,17 +38,22 @@ vecShape = QuasiQuoter {
   quoteType = parseVectorShapeType
 }
 
+parseVectorExp :: String -> Q Exp
+parseVectorExp s = let qs = fmap parseQuantityExp $ splitCommaList s
+                    in makeVectorExp qs
+
+parseQuantityExp :: String -> Q Exp
+parseQuantityExp s = do
+                       case (Meta.parseExp s) of
+                         Left err -> fail $ show err
+                         Right e -> return e
+
 parseVectorType :: String -> Q Type
 parseVectorType s = [t| DimMat $(parseVectorShapeType s) |]
---parseVectorType s = [t| DimMat ('VectorShape $(parseDimensionType' s) '[]) |]
 
 parseVectorShapeType :: String -> Q Type
-parseVectorShapeType s = let dimTypes = fmap parseDimensionType $ splitOn "," s
+parseVectorShapeType s = let dimTypes = fmap parseDimensionType $ splitCommaList s
                           in makeVectorShapeType dimTypes
-
-makeVectorShapeType :: [Q Type] -> Q Type
-makeVectorShapeType (d : ds) = [t| 'VectorShape $(d) $(makeTypeLevelList ds) |]
-makeVectorShapeType _ = fail "Empty vectors not permitted."
 
 parseDimensionType :: String -> Q Type
 parseDimensionType s = do
@@ -56,6 +61,21 @@ parseDimensionType s = do
                             Left err -> fail $ show err
                             Right t -> return t
 
+makeVectorExp :: [Q Exp] -> Q Exp
+makeVectorExp [] = fail "Empty vectors not permitted."
+makeVectorExp [e] = [| vecSingleton $(e) |]
+makeVectorExp (e:es) = [| vecCons $(e) $(makeVectorExp es) |]
+
+makeVectorShapeType :: [Q Type] -> Q Type
+makeVectorShapeType (d : ds) = [t| 'VectorShape $(d) $(makeTypeLevelList ds) |]
+makeVectorShapeType _ = fail "Empty vectors not permitted."
+
 makeTypeLevelList :: [Q Type] -> Q Type
 makeTypeLevelList (t : ts) = [t| $(t) ': $(makeTypeLevelList ts) |]
 makeTypeLevelList [] = [t| '[] |]
+
+splitCommaList :: String -> [String]
+splitCommaList = splitOn ","
+
+splitSemicolonList :: String -> [String]
+splitSemicolonList = splitOn ";"
