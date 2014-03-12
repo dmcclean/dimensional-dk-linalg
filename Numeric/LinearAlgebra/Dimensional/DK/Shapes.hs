@@ -12,7 +12,7 @@
 {- | This module only exposes the types and type functions neccessary to express linear algebra, it doesn't actually implement term-level linear algebra.
 -}
 module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
-  Shape(..),
+  type Shape(..),
   HasProduct,
   ShapeScale,
   ShapeProduct,
@@ -26,6 +26,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   HasTrace,
   ShapeTrace,
   DivideVectors,
+  DivideVectorLists,
   VectorLength,
   Square,
   HorizontallyConcatenable,
@@ -134,6 +135,8 @@ type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
                                                              (MapMul (ListHead (f ': fs)) (MapRecip fs))
   -- try to deal with matrix/matrix division?
 
+type family DivideVectorLists (to :: [Dimension]) (from :: [Dimension]) :: Shape where
+  DivideVectorLists (t ': ts) (f ': fs) = DivideVectors ('VectorShape t ts) ('VectorShape f fs)
 
 type family HorizontallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (rs1 ~ rs2)

@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds #-}
+{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE NegativeLiterals #-}
@@ -23,51 +24,71 @@ nat3 = Proxy :: Proxy (NN.S (NN.S (NN.S NN.Z)))
 nat4 = Proxy :: Proxy (NN.S (NN.S (NN.S (NN.S NN.Z))))
 -- end of ghci helpers
 
-frog :: [vec|  DLength  , DMass,DLength/DTime |] P.Double
-frog = [vec| 3 *~ meter, 41.2 *~ kilo gram, 11.2 *~ knot |]
+data ContinuousLiSystem (iv :: Dimension) (xs :: [Dimension]) (ys :: [Dimension]) (us :: [Dimension]) v = ContinuousLiSystem
+                                                                          {
+                                                                            a'' :: DimMat (DivideVectorLists (MapDiv iv xs) xs) v,
+                                                                            b'' :: DimMat (DivideVectorLists (MapDiv iv xs) us) v,
+                                                                            c'' :: DimMat (DivideVectorLists ys xs) v,
+                                                                            d'' :: DimMat (DivideVectorLists ys us) v
+                                                                          }
 
-cow :: [vec| DLength * DAmountOfSubstance |] P.Double
-cow = undefined
+type ContinuousLtiSystem = ContinuousLiSystem DTime
 
-type State = [vecShape| DPlaneAngle, DAngularVelocity, DLength, DVelocity |]
 
-type Output = [vecShape| DPlaneAngle, DLength |]
+{- Example from http://ctms.engin.umich.edu/CTMS/index.php?example=InvertedPendulum&section=ControlStateSpace -}
 
-i = undefined :: DimMat State Double
-o = undefined :: DimMat Output Double
+-- not really stated on that page, but if you go back a couple of pages in their derivation
+-- you can see that the type of u is a 1x1 matrix whose sole element is a force
 
-type A = DivideVectors Output State
+massOfCart = (0.5 :: Double) *~ (kilo gram)
+massOfPendulum = (0.2 :: Double) *~ (kilo gram)
+coefficientOfFrictionForCart = (0.1 :: Double) *~ (newton / (meter / second))
+lengthToPendulumCenterOfMass = (0.3 :: Double) *~ meter
+massMomentOfInertiaOfPendulum = (0.006 :: Double) *~ (kilo gram * meter^pos2)
+g = (9.8 :: Double) *~ (meter / second^pos2)
 
-type A' = MatrixShape DPlaneAngle '[DLength] '[DTime, DWaveNumber, Recip DVelocity]
+p = massMomentOfInertiaOfPendulum*(massOfCart+massOfPendulum)+(massOfCart*massOfPendulum*lengthToPendulumCenterOfMass*lengthToPendulumCenterOfMass)
 
-a :: DimMat A' Double
---a = zeroes
-a = [mat| _1, _0, _0, _0;
-          _0, _0, _1, _0 |]
---a = [mat| _1, 0 *~ second, 0 *~ (meter^neg1), 0 *~ (second/meter); 0 *~ meter, 0 *~ (second * meter), _1, 0 *~ second |]
-{-
-a = vconcat (vecCons _1 
-              (vecCons (0 *~ second)
-                (vecCons (0 *~ (meter^neg1))
-                  (vecSingleton (0 *~ (second/meter))))))
-            (vecCons (0 *~ meter)
-              (vecCons (0 *~ (second * meter))
-                (vecCons _1
-                  (vecSingleton (0 *~ second)))))
--}
---a = vconcat' (vecCons _1 (vecCons _0 (vecCons _0 (vecSingleton _0)))) (vecCons _0 (vecCons _0 (vecCons _1 (vecSingleton _0))))
---a = vconcat undefined undefined
+a22 = negate (massMomentOfInertiaOfPendulum+massOfPendulum * lengthToPendulumCenterOfMass * lengthToPendulumCenterOfMass) * coefficientOfFrictionForCart / p
+a23 = (massOfPendulum * massOfPendulum * g * lengthToPendulumCenterOfMass * lengthToPendulumCenterOfMass) / p
+a42 = negate (massOfPendulum * lengthToPendulumCenterOfMass * coefficientOfFrictionForCart) / p
+a43 = massOfPendulum * g * lengthToPendulumCenterOfMass*(massOfCart + massOfPendulum)/p
 
-b = [mat| (1.0 :: Double) *~ meter, 2.0 *~ (meter / second);
-          7.3 *~ (meter/second), -1.4 *~ (meter / second^pos2) |]
+b21 = (massMomentOfInertiaOfPendulum + (massOfPendulum * lengthToPendulumCenterOfMass * lengthToPendulumCenterOfMass)) / p
+b41 = massOfPendulum * lengthToPendulumCenterOfMass / p
 
-c = [mat| _1; _1; (2.3 :: Double) *~ mole |]
+-- example state value
+x = [vec|  1.0 *~ meter,
+           0.2 *~ (meter / second),
+           _0 :: Dimensionless Double,
+           0.1 *~ (second^neg1) |]
 
-d = [mat| (2.7 :: Double) *~ mile |]
+dx = scale (_1 / (1 *~ second)) x
 
-e = [mat| _2 :: Dimensionless Double, _3 |]
+-- example control input
+u = [vec| (0 :: Double) *~ newton |]
 
-f :: DimMat State Double
-f = [vec| _0, _0, _0, _0 |]
+-- example output
+y = [vec| 1 *~ meter, _0 :: Dimensionless Double  |]
 
-moose = "squirrel"
+type ExampleSystem = ContinuousLtiSystem
+    '[DLength, DVelocity, DPlaneAngle, DAngularVelocity]
+    '[DLength, DPlaneAngle]
+    '[DForce]
+    Double
+
+pendulum = ContinuousLiSystem {
+           a'' = zeroes,
+--           a'' = [mat| _0, _1, _0, _0;
+--                       _0, a22, a23, _0;
+--                       _0, _0, _0, _1;
+--                       _0, a42, a43, _0 |],
+           b'' = zeroes,
+--           b'' = [mat| _0;
+--                       b21;
+--                       _0;
+--                       b41 |],
+           c'' = [mat| _1, _0, _0, _0;
+                       _0, _0, _1, _0 |],
+           d'' = zeroes
+         } :: ExampleSystem
