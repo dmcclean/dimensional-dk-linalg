@@ -63,7 +63,6 @@ type family HasProduct (ldims :: Shape) (rdims :: Shape) :: Constraint where
   HasProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (cs1 ~ MapRecip rs2)
   HasProduct ('MatrixShape g1 rs1 cs1) ('VectorShape d ds)       = (cs1 ~ MapRecip (MapDiv d ds))
   HasProduct ('VectorShape d ds)       ('MatrixShape g2 rs2 cs2) = (rs2 ~ MapRecip (MapDiv d ds))
-  -- other entries for matrix/vector products
 
 -- Define the shape of inner products.
 -- This is defined even where the product doesn't exist (non-matching dimensions or sizes), but no problem arises because you can't call the actual term-level product method at such shapes.
@@ -71,7 +70,6 @@ type family ShapeProduct (ldims :: Shape) (rdims :: Shape) :: Shape where
   ShapeProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = 'MatrixShape (g1 * g2) rs1 cs2
   ShapeProduct ('MatrixShape g1 rs1 cs1) ('VectorShape d ds)       = 'VectorShape (g1 * d) (MapMul (g1 * d) rs1)
   ShapeProduct ('VectorShape d ds)       ('MatrixShape g2 rs2 cs2) = 'VectorShape (g2 * d) (MapMul (g2 * d) cs2)
-  -- other entries for matrix/vector products
 
 -- Define the shape of transposition.
 -- The shape of matrix transposition for shapes expressed in this form is simple, just flip the rows and columns.
