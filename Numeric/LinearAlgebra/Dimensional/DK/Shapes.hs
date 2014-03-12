@@ -130,9 +130,9 @@ type family Square (shape :: Shape) :: Constraint where
 -- This is the shape that, when right-multiplied by a column vector whose shape is from, produces a column vector whose shape is to.
 type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
   DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
-                                                             (ListHead (MapDiv (ListHead (f ': fs)) (t ': ts)))
-                                                             (MapDiv (ListHead (f ': fs)) ts)
-                                                             (MapMul (ListHead (f ': fs)) (MapRecip fs))
+                                                             (ListHead (MapDiv f (t ': ts)))
+                                                             (MapDiv t ts)
+                                                             (MapMul f (MapRecip fs))
   -- try to deal with matrix/matrix division?
 
 type family DivideVectorLists (to :: [Dimension]) (from :: [Dimension]) :: Shape where

@@ -88,6 +88,7 @@ pendulum = ContinuousLiSystem {
 --                       b21;
 --                       _0;
 --                       b41 |],
+--           c'' = zeroes,
            c'' = [mat| _1, _0, _0, _0;
                        _0, _0, _1, _0 |],
            d'' = zeroes
