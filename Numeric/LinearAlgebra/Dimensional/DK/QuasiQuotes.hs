@@ -7,6 +7,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.QuasiQuotes
 (
   vec,
   vecShape,
+  mat,
 ) where
 
 import Language.Haskell.TH
@@ -18,7 +19,7 @@ import Language.Haskell.TH.Quote
 import Language.Haskell.Meta.Parse as Meta
 
 import Numeric.Units.Dimensional.DK (Quantity, Dimension, DLength, DMass)
-import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..), vecSingleton, vecCons)
+import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..), vecSingleton, vecCons, vconcat)
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 
 import Data.List.Split
@@ -26,17 +27,28 @@ import Data.List.Split
 
 vec = QuasiQuoter {
   quoteExp = parseVectorExp,
-  quotePat = error "vecD",
-  quoteDec = error "vecD",
+  quotePat = error "vec",
+  quoteDec = error "vec",
   quoteType = parseVectorType
 }
 
 vecShape = QuasiQuoter {
-  quoteExp = error "vecShapeD",
-  quotePat = error "vecShapeD",
-  quoteDec = error "vecShapeD",
+  quoteExp = error "vecShape",
+  quotePat = error "vecShape",
+  quoteDec = error "vecShape",
   quoteType = parseVectorShapeType
 }
+
+mat = QuasiQuoter {
+  quoteExp = parseMatrixExp,
+  quotePat = error "mat",
+  quoteDec = error "mat",
+  quoteType = error "mat"
+}
+
+parseMatrixExp :: String -> Q Exp
+parseMatrixExp s = let rs = fmap parseVectorExp $ splitSemicolonList s
+                    in makeMatrixExp rs
 
 parseVectorExp :: String -> Q Exp
 parseVectorExp s = let qs = fmap parseQuantityExp $ splitCommaList s
@@ -60,6 +72,12 @@ parseDimensionType s = do
                           case (Meta.parseType s) of
                             Left err -> fail $ show err
                             Right t -> return t
+
+makeMatrixExp :: [Q Exp] -> Q Exp
+makeMatrixExp [] = fail "Empty matrices not permitted."
+makeMatrixExp [e] = undefined -- convert vector into single row matrix
+makeMatrixExp (e:[e2]) = [| vconcat $(e) $(e2) |]
+makeMatrixExp (e:es) = [| vconcat $(e) $(makeMatrixExp es) |]
 
 makeVectorExp :: [Q Exp] -> Q Exp
 makeVectorExp [] = fail "Empty vectors not permitted."

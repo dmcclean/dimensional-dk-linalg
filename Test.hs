@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE NegativeLiterals #-}
 
 module Test where
 
@@ -26,4 +27,11 @@ o = undefined :: DimMat Output Double
 
 type A = DivideVectors Output State
 
-a = zeroes :: DimMat A Double
+a :: DimMat A Double
+a = [mat| _1, _0, _0, _0;
+          _0, _0, _1, _0 |]
+
+b = [mat| (1.0 :: Double) *~ meter, 2.0 *~ (meter / second);
+          7.3 *~ (meter/second), -1.4 *~ (meter / second^pos2) |]
+
+moose = "squirrel"
