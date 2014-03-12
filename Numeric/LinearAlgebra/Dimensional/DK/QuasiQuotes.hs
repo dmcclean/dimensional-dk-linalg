@@ -19,7 +19,7 @@ import Language.Haskell.TH.Quote
 import Language.Haskell.Meta.Parse as Meta
 
 import Numeric.Units.Dimensional.DK (Quantity, Dimension, DLength, DMass)
-import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..), vecSingleton, vecCons, vconcat)
+import Numeric.LinearAlgebra.Dimensional.DK.Internal (DimMat(..), vecSingleton, vecCons, fromRowVector, vconcat, vconcat', vconcat'')
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes
 
 import Data.List.Split
@@ -75,9 +75,9 @@ parseDimensionType s = do
 
 makeMatrixExp :: [Q Exp] -> Q Exp
 makeMatrixExp [] = fail "Empty matrices not permitted."
-makeMatrixExp [e] = undefined -- convert vector into single row matrix
-makeMatrixExp (e:[e2]) = [| vconcat $(e) $(e2) |]
-makeMatrixExp (e:es) = [| vconcat $(e) $(makeMatrixExp es) |]
+makeMatrixExp [e] = [| fromRowVector $(e) |]
+makeMatrixExp (e:[e2]) = [| vconcat'' $(e) $(e2) |]
+makeMatrixExp (e:es) = [| vconcat' $(e) $(makeMatrixExp es) |]
 
 makeVectorExp :: [Q Exp] -> Q Exp
 makeVectorExp [] = fail "Empty vectors not permitted."

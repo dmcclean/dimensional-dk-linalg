@@ -37,6 +37,8 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   VectorElement,
   MatrixRow,
   MatrixColumn,
+  MapDiv,
+  MapMul,
   ) where
 
 import GHC.Exts (Constraint)

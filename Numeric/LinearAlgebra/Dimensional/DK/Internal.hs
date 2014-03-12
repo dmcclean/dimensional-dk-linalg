@@ -14,6 +14,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 module Numeric.LinearAlgebra.Dimensional.DK.Internal 
 {-
@@ -244,6 +245,30 @@ vconcat (DimMat m1) (DimMat m2) = DimMat (m1 <-> m2)
 vconcat (DimMat m1) (DimVec v2) = undefined --DimMat (m1 <-> M.transpose v2)
 vconcat (DimVec v1) (DimMat m2) = undefined --DimMat (M.transpose v1 <-> m2)
 vconcat (DimVec v1) (DimVec v2) = DimMat (M.transpose v1 <-> M.transpose v2)
+
+fromRowVector :: (ValidElement a) => DimMat (VectorShape d ds) a -> DimMat (MatrixShape d '[] (MapDiv d ds)) a
+fromRowVector (DimVec v) = DimMat (M.transpose v)
+
+vconcat'  :: (ValidElement a,
+              r' ~ (g / d),
+              cs ~ MapDiv d ds,
+              rs' ~ MapDiv (g/d) rs
+              )
+             => DimMat (VectorShape d ds) a
+             -> DimMat (MatrixShape g rs cs) a
+             -> DimMat (MatrixShape d (r' ': rs') cs) a
+vconcat' (DimVec v1) (DimMat m2) = DimMat (M.transpose v1 <-> m2)
+
+-- I can't figure out why this is needed. But I also can't make a version of vconcat' that seems to work when used with fromRowVector. I don't get it.
+vconcat'' :: (ValidElement a,
+              r1 ~ (d2 / d1),
+              cs ~ MapDiv d1 ds1,
+              ds2 ~ MapMul d2 cs
+             )
+             => DimMat (VectorShape d1 ds1) a
+             -> DimMat (VectorShape d2 ds2) a
+             -> DimMat (MatrixShape d1 '[r1] cs) a
+vconcat'' (DimVec v1) (DimVec v2) = DimMat (M.transpose v1 <-> M.transpose v2)
 
 concat :: (ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
 concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
