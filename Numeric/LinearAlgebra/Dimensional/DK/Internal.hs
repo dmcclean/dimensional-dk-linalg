@@ -137,7 +137,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.Internal
    where
 import Foreign.Storable (Storable)      
 import GHC.Exts (Constraint)
-import Numeric.Units.Dimensional.DK.Prelude
+import Numeric.Units.Dimensional.DK.Prelude hiding (concat)
 import qualified Prelude as P
 import qualified Numeric.NumType.DK as N
 import qualified Numeric.NumType.DK.Nat as NN
@@ -247,6 +247,12 @@ vconcat (DimVec v1) (DimVec v2) = DimMat (M.transpose v1 <-> M.transpose v2)
 
 concat :: (ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
 concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
+
+vecSingleton :: (KnownDimension d, Fractional a, ValidElement a) => Quantity d a -> DimMat (VectorShape d '[]) a
+vecSingleton x = DimVec . M.fromList $ [[x /~ siUnit]]
+
+vecCons :: (KnownDimension d', Fractional a, ValidElement a) => Quantity d' a -> DimMat (VectorShape d ds) a -> DimMat (VectorShape d' (d ': ds)) a
+vecCons x = concat (vecSingleton x)
 
 rank :: DimMat s a -> Integer
 rank = undefined
