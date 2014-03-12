@@ -76,7 +76,7 @@ parseDimensionType s = do
 makeMatrixExp :: [Q Exp] -> Q Exp
 makeMatrixExp [] = fail "Empty matrices not permitted."
 makeMatrixExp [e] = [| fromRowVector $(e) |]
-makeMatrixExp (e:[e2]) = [| vconcat'' $(e) $(e2) |]
+--makeMatrixExp (e:[e2]) = [| vconcat'' $(e) $(e2) |]
 makeMatrixExp (e:es) = [| vconcat' $(e) $(makeMatrixExp es) |]
 
 makeVectorExp :: [Q Exp] -> Q Exp

@@ -40,6 +40,7 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   MatrixColumn,
   MapDiv,
   MapMul,
+  MapMulEq,
   ) where
 
 import GHC.Exts (Constraint)
@@ -126,14 +127,53 @@ type family Square (shape :: Shape) :: Constraint where
   Square ('MatrixShape g rs cs) = (ListLength rs ~ ListLength cs)
 
 
+-- This is still broken!
+{- Extended Example
+
+b'' :: DimMat (DivideVectorLists (MapDiv iv xs) us) v,
+Where
+  iv = DTime,
+  xs = '[DLength, DVelocity, DPlaneAngle, DAngularVelocity]
+  us = '[DForce]
+
+Result shape, b, should be such that a matrix B at that shape has the property that xDot = B <> u
+
+The shape of xDot = MapDiv DTime xs, or '[DVelocity, DAccleration, DAngularVelocity, DAngularAcceleration]
+
+The shape of B is:
+  [vecShape| DVelocity/DForce,
+             DAcceleration/DForce,
+             DAngularVelocity/DForce,
+             DAngularAcceleration/DForce |]
+
+If we let B = MatrixShape g rs cs, then we can see that g = DVelocity/DForce and cs = '[]
+rs must be a three element list describing how the non-head elements of the vector shape are related to the head
+
+  [vecShape| g,
+             1/DTime,
+             1/DLength,
+             1/(DLength*DTime) |]
+
+So if we let (t : ts) = xDot = MapDiv iv xs,
+         and (f : fs) =  us
+
+Then what we want is
+
+  g = t/f
+  rs = MapDiv t ts
+  cs = '[]
+
+-}
+
 -- A matrix shape for converting from one vector to another.
 -- This is the shape that, when right-multiplied by a column vector whose shape is from, produces a column vector whose shape is to.
 type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
   DivideVectors ('VectorShape t ts) ('VectorShape f fs) = 'MatrixShape 
-                                                             (ListHead (MapDiv f (t ': ts)))
+                                                             (t/f)
                                                              (MapDiv t ts)
                                                              (MapMul f (MapRecip fs))
   -- try to deal with matrix/matrix division?
+
 
 type family DivideVectorLists (to :: [Dimension]) (from :: [Dimension]) :: Shape where
   DivideVectorLists (t ': ts) (f ': fs) = DivideVectors ('VectorShape t ts) ('VectorShape f fs)
@@ -234,3 +274,10 @@ type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
 type family ElementAt (xs :: [k]) (n :: NN.Nat) :: k where
   ElementAt (a ': as) NN.Z = a
   ElementAt (a ': as) (NN.S n) = ElementAt as n
+
+
+type family MapMulEq (xs :: [Dimension]) (d :: Dimension) (ys :: [Dimension]) :: Constraint where -- xs ~ MapMul d ys
+  MapMulEq '[]       d '[]       = ()
+  MapMulEq (x ': xs) d '[]       = (True ~ False)
+  MapMulEq '[]       d (y ': ys) = (True ~ False)
+  MapMulEq (x ': xs) d (y ': ys) = (x ~ (d * y), MapMulEq xs d ys)

@@ -24,12 +24,12 @@ nat3 = Proxy :: Proxy (NN.S (NN.S (NN.S NN.Z)))
 nat4 = Proxy :: Proxy (NN.S (NN.S (NN.S (NN.S NN.Z))))
 -- end of ghci helpers
 
-data ContinuousLiSystem (iv :: Dimension) (xs :: [Dimension]) (ys :: [Dimension]) (us :: [Dimension]) v = ContinuousLiSystem
+data ContinuousLiSystem (iv :: Dimension) (xs :: Shape) (ys :: Shape) (us :: Shape) v = ContinuousLiSystem
                                                                           {
-                                                                            a'' :: DimMat (DivideVectorLists (MapDiv iv xs) xs) v,
-                                                                            b'' :: DimMat (DivideVectorLists (MapDiv iv xs) us) v,
-                                                                            c'' :: DimMat (DivideVectorLists ys xs) v,
-                                                                            d'' :: DimMat (DivideVectorLists ys us) v
+                                                                            a'' :: DimMat (DivideVectors (ShapeScale (Recip iv) xs) xs) v,
+                                                                            b'' :: DimMat (DivideVectors (ShapeScale (Recip iv) xs) us) v,
+                                                                            c'' :: DimMat (DivideVectors ys xs) v,
+                                                                            d'' :: DimMat (DivideVectors ys us) v
                                                                           }
 
 type ContinuousLtiSystem = ContinuousLiSystem DTime
@@ -72,9 +72,9 @@ u = [vec| (0 :: Double) *~ newton |]
 y = [vec| 1 *~ meter, _0 :: Dimensionless Double  |]
 
 type ExampleSystem = ContinuousLtiSystem
-    '[DLength, DVelocity, DPlaneAngle, DAngularVelocity]
-    '[DLength, DPlaneAngle]
-    '[DForce]
+    ('VectorShape DLength '[DVelocity, DPlaneAngle, DAngularVelocity])
+    ('VectorShape DLength '[DPlaneAngle])
+    ('VectorShape DForce '[])
     Double
 
 pendulum = ContinuousLiSystem {
@@ -83,13 +83,14 @@ pendulum = ContinuousLiSystem {
 --                       _0, a22, a23, _0;
 --                       _0, _0, _0, _1;
 --                       _0, a42, a43, _0 |],
-           b'' = zeroes,
---           b'' = [mat| _0;
---                       b21;
---                       _0;
---                       b41 |],
---           c'' = zeroes,
+           --b'' = zeroes,
+           b'' = [mat| _0; b21; 0 *~ (second / (kilo gram * meter)); b41 |],
+           --c'' = zeroes,
            c'' = [mat| _1, _0, _0, _0;
                        _0, _0, _1, _0 |],
            d'' = zeroes
          } :: ExampleSystem
+
+--b' = [mat| 0 *~ (second / kilo gram); b21; 0 *~ (second / (kilo gram * meter)); b41 |]
+--b' = [mat| 0 *~ (second / kilo gram); b21; _0; b41 |]
+b' = [mat| _0; b21; 0 *~ (second / (kilo gram * meter)); b41 |] `asTypeOf` (b'' pendulum)
