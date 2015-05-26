@@ -24,12 +24,11 @@ library
   -- other-modules:       
   -- other-extensions:    
   build-depends:       base < 5,
-                       time < 1.5,
                        numtype-dk >= 0.4,
                        dimensional-dk,
                        template-haskell,
                        haskell-src-meta,
                        split,
-                       bed-and-breakfast
+                       bed-and-breakfast >= 0.4.3
   -- hs-source-dirs:      
   default-language:    Haskell2010

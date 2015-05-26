@@ -134,8 +134,7 @@ import Foreign.Storable (Storable)
 import GHC.Exts (Constraint)
 import Numeric.Units.Dimensional.DK.Prelude hiding (concat)
 import qualified Prelude as P
-import qualified Numeric.NumType.DK as N
-import qualified Numeric.NumType.DK.Nat as NN
+import qualified Numeric.NumType.DK.Integers as N
 
 
 import Numeric.LinearAlgebra.Dimensional.DK.Shapes as S
