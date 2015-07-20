@@ -45,8 +45,6 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
 import GHC.Exts (Constraint)
 import qualified GHC.TypeLits as NN
 import Numeric.Units.Dimensional.DK.Prelude
-import qualified Prelude as P
-import qualified Numeric.NumType.DK.Integers as N
 
 -- define a data kind for matrix shapes
 -- a matrix shape is a single global dimension, an n-1 list of row dimesnions, and an m-1 list of column dimensions
