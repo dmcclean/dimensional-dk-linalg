@@ -39,15 +39,12 @@ module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   MatrixRow,
   MatrixColumn,
   MapDiv,
-  MapMul,
-  MapMulEq,
-  ) where
+  MapMul
+) where
 
 import GHC.Exts (Constraint)
+import qualified GHC.TypeLits as NN
 import Numeric.Units.Dimensional.DK.Prelude
-import qualified Prelude as P
-import qualified Numeric.NumType.DK as N
-import qualified Numeric.NumType.DK.Nat as NN
 
 -- define a data kind for matrix shapes
 -- a matrix shape is a single global dimension, an n-1 list of row dimesnions, and an m-1 list of column dimensions
@@ -110,16 +107,16 @@ type family ShapeTrace (shape :: Shape) :: Dimension where
 
 -- Define the type-level number of rows in a matrix.
 type family ShapeRows (shape :: Shape) :: NN.Nat where
-  ShapeRows ('MatrixShape g rs cs) = NN.S (ListLength rs)
+  ShapeRows ('MatrixShape g rs cs) = 1 NN.+ (ListLength rs)
 
 
 -- Define the type-level number of columns in a matrix.
 type family ShapeCols (shape :: Shape) :: NN.Nat where
-  ShapeCols ('MatrixShape g rs cs) = NN.S (ListLength cs)
+  ShapeCols ('MatrixShape g rs cs) = 1 NN.+ (ListLength cs)
 
 
 type family VectorLength (shape :: Shape) :: NN.Nat where 
-  VectorLength ('VectorShape a as) = NN.S (ListLength as)
+  VectorLength ('VectorShape a as) = 1 NN.+ (ListLength as)
 
 
 -- A constraint for square matrices.
@@ -212,8 +209,8 @@ type family MatrixElement (shape :: Shape) (row :: NN.Nat) (col :: NN.Nat) :: Di
 
 -- Extract the dimension of an element from a vector shape.
 type family VectorElement (shape :: Shape) (i :: NN.Nat) :: Dimension where
-  VectorElement ('VectorShape d ds) NN.Z = d
-  VectorElement ('VectorShape d ds) (NN.S i) = ElementAt ds i
+  VectorElement ('VectorShape d ds) 0 = d
+  VectorElement ('VectorShape d ds) i = ElementAt ds (i NN.- 1)
 
 -- Extract a row from a matrix.
 type family MatrixRow (matrix :: Shape) (row :: NN.Nat) :: Shape where
@@ -260,8 +257,8 @@ type family ListHead (xs :: [k]) :: k where
 
 -- Get the length of a type-level list.
 type family ListLength (xs :: [k]) :: NN.Nat where
-  ListLength '[] = NN.Z
-  ListLength (x ': xs) = NN.S (ListLength xs)
+  ListLength '[] = 0
+  ListLength (x ': xs) = 1 NN.+ (ListLength xs)
 
 
 type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
@@ -272,12 +269,5 @@ type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
 
 -- Get a specified, zero-indexed element from a type-level list.
 type family ElementAt (xs :: [k]) (n :: NN.Nat) :: k where
-  ElementAt (a ': as) NN.Z = a
-  ElementAt (a ': as) (NN.S n) = ElementAt as n
-
-
-type family MapMulEq (xs :: [Dimension]) (d :: Dimension) (ys :: [Dimension]) :: Constraint where -- xs ~ MapMul d ys
-  MapMulEq '[]       d '[]       = ()
-  MapMulEq (x ': xs) d '[]       = (True ~ False)
-  MapMulEq '[]       d (y ': ys) = (True ~ False)
-  MapMulEq (x ': xs) d (y ': ys) = (x ~ (d * y), MapMulEq xs d ys)
+  ElementAt (a ': as) 0 = a
+  ElementAt (a ': as) n = ElementAt as (n NN.- 1)
