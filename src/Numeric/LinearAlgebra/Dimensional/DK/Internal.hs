@@ -243,34 +243,37 @@ fromRowVector :: (ValidElement a) => DimMat (VectorShape d ds) a -> DimMat (Matr
 fromRowVector (DimVec v) = DimMat (M.transpose v)
 
 vconcat'  :: (ValidElement a,
-              r' ~ (g / d),
-              cs ~ MapDiv d ds,
-              rs' ~ MapDiv (g/d) rs
+              MapMulEq ds d cs
               )
              => DimMat (VectorShape d ds) a
              -> DimMat (MatrixShape g rs cs) a
-             -> DimMat (MatrixShape d (r' ': rs') cs) a
+             -> DimMat (MatrixShape d ((g/d) ': (MapMul (g/d) rs)) cs) a
 vconcat' (DimVec v1) (DimMat m2) = DimMat (M.transpose v1 <-> m2)
 
 -- I can't figure out why this is needed. But I also can't make a version of vconcat' that seems to work when used with fromRowVector. I don't get it.
 vconcat'' :: (ValidElement a,
-              r1 ~ (d2 / d1),
-              cs ~ MapDiv d1 ds1,
-              ds2 ~ MapMul d2 cs
+              MapMulEq ds2 (d2/d1) ds1
              )
              => DimMat (VectorShape d1 ds1) a
              -> DimMat (VectorShape d2 ds2) a
-             -> DimMat (MatrixShape d1 '[r1] cs) a
+             -> DimMat (MatrixShape d1 '[d2/d1] (MapDiv d1 ds1)) a
 vconcat'' (DimVec v1) (DimVec v2) = DimMat (M.transpose v1 <-> M.transpose v2)
 
 concat :: (ValidElement a) => DimMat s1 a -> DimMat s2 a -> DimMat (VectorConcatenation s1 s2) a
 concat (DimVec v1) (DimVec v2) = DimVec (v1 <-> v2)
 
-vecSingleton :: (KnownDimension d, Fractional a, ValidElement a) => Quantity d a -> DimMat (VectorShape d '[]) a
-vecSingleton x = DimVec . M.fromList $ [[x /~ siUnit]]
+--vecSingleton :: (KnownDimension d, Fractional a, ValidElement a) => Quantity d a -> DimMat (VectorShape d '[]) a
+--vecSingleton x = DimVec . M.fromList $ [[x /~ siUnit]]
 
-vecCons :: (KnownDimension d', Fractional a, ValidElement a) => Quantity d' a -> DimMat (VectorShape d ds) a -> DimMat (VectorShape d' (d ': ds)) a
+--vecCons :: (KnownDimension d', Fractional a, ValidElement a) => Quantity d' a -> DimMat (VectorShape d ds) a -> DimMat (VectorShape d' (d ': ds)) a
+--vecCons x = concat (vecSingleton x)
+
+vecSingleton :: (Fractional a, ValidElement a) => Quantity d a -> DimMat (VectorShape d '[]) a
+vecSingleton x = DimVec . M.fromList $ [[12345]]
+
+vecCons :: (Fractional a, ValidElement a) => Quantity d' a -> DimMat (VectorShape d ds) a -> DimMat (VectorShape d' (d ': ds)) a
 vecCons x = concat (vecSingleton x)
+
 
 rank :: DimMat s a -> Integer
 rank = undefined
