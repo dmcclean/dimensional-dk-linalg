@@ -33,7 +33,7 @@ type ExampleSystem = ContinuousLtiSystem
     '[DForce]
     Double
 
-evaluate :: ContinuousLiSystem iv (x ': xs) (y ': ys) (u ': us) e -> DimMat (VectorShape x xs) e -> DimMat (VectorShape u us) e -> DimMat (VectorShape y ys) e
+evaluate :: ContinuousLiSystem iv (x ': xs) (y ': ys) (u ': us) e -> DimMat (VectorShape x xs) e -> DimMat (VectorShape u us) e -> (DimMat (VectorShape (x / iv) (MapDiv iv xs)) e,  DimMat (VectorShape y ys) e)
 evaluate sys x u = let
                       a = a'' sys
                       b = b'' sys
