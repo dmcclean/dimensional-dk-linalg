@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -fplugin Numeric.Units.Dimensional.DK.Solver #-}
+
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE TypeOperators #-}
