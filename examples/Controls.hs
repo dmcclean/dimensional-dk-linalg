@@ -13,10 +13,10 @@ import qualified Prelude as P
 
 data DimMat (s :: Shape) (e :: *) = DimMat
 
-(<>) :: DimMat s1 e -> DimMat s2 e -> DimMat (ShapeProduct s1 s2) e
+(<>) :: (InnerProduct s1 s2 s3) => DimMat s1 e -> DimMat s2 e -> DimMat s3 e
 _ <> _ = DimMat
 
-add :: DimMat s e -> DimMat s e -> DimMat s e
+add :: (ShapeEquivalent s1 s2) => DimMat s1 e -> DimMat s2 e -> DimMat s1 e
 add _ _ = DimMat
 
 data ContinuousLiSystem (iv :: Dimension) (xs :: [Dimension]) (ys :: [Dimension]) (us :: [Dimension]) e = ContinuousLiSystem

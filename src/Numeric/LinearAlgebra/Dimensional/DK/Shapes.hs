@@ -13,33 +13,18 @@
 -}
 module Numeric.LinearAlgebra.Dimensional.DK.Shapes (
   type Shape(..),
-  HasProduct,
-  ShapeScale,
-  ShapeProduct,
-  ShapeTranspose,
-  ShapeInverse,
-  ShapeDeterminant,
-  ShapeDimensionless,
-  ShapeRows,
-  ShapeCols,
-  HasIdentity,
-  HasTrace,
-  ShapeTrace,
-  DivideVectors,
-  DivideVectorLists,
-  VectorLength,
-  Square,
-  HorizontallyConcatenable,
-  VerticallyConcatenable,
-  HorizontalConcatenation,
-  VerticalConcatenation,
-  VectorConcatenation,
-  MatrixElement,
-  VectorElement,
-  MatrixRow,
-  MatrixColumn,
+  InnerProduct,
+  ShapeEquivalent,
+  MapMulEquivalent,
+  MapDivEquivalent,
+  Impossible,
+  AllEquivalent,
+
+  MapMul,
   MapDiv,
-  MapMul
+  MapRecip,
+  DivideVectors,
+  DivideVectorLists
 ) where
 
 import GHC.Exts (Constraint)
@@ -51,11 +36,33 @@ import Numeric.Units.Dimensional.DK.Prelude
 data Shape = MatrixShape Dimension [Dimension] [Dimension]
            | VectorShape Dimension [Dimension]
 
+type family InnerProduct (x :: Shape) (y :: Shape) (z :: Shape) :: Constraint where
+  InnerProduct ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) ('MatrixShape g3 rs3 cs3) = ((g1 * g2) ~ g3, AllEquivalent rs1 rs3, AllEquivalent cs1 rs2, AllEquivalent cs2 cs3)
 
-type family ShapeScale (d :: Dimension) (s :: Shape) :: Shape where
-  ShapeScale d ('MatrixShape g rs cs) = 'MatrixShape (d * g) rs cs
-  ShapeScale d ('VectorShape x xs) = 'VectorShape (d * x) (MapMul d xs)
+type family ShapeEquivalent (x :: Shape) (y :: Shape) :: Constraint where
+  ShapeEquivalent ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (g1 ~ g2, AllEquivalent rs1 rs2, AllEquivalent cs1 cs2)
+  ShapeEquivalent ('VectorShape x xs) ('VectorShape y ys) = (x ~ y, AllEquivalent xs ys)
 
+type Impossible = ('True ~ 'False)
+
+type family AllEquivalent (xs :: [k]) (ys :: [k]) :: Constraint where
+  AllEquivalent '[] '[] = ()
+  AllEquivalent (x ': xs) '[] = Impossible
+  AllEquivalent '[] (y ': ys) = Impossible
+  AllEquivalent (x ': xs) (y ': ys) = (x ~ y, AllEquivalent xs ys)
+
+-- map (* s) xs is equivalent to ys
+type family MapMulEquivalent (s :: Dimension) (xs :: [Dimension]) (ys :: [Dimension]) :: Constraint where
+  MapMulEquivalent s '[] '[] = ()
+  MapMulEquivalent s (x ': xs) '[] = Impossible
+  MapMulEquivalent s '[] (y ': ys) = Impossible
+  MapMulEquivalent s (x ': xs) (y ': ys) = ((s * x) ~ y, MapMulEquivalent s xs ys)
+
+-- map (/ s) xs is equivalent to ys
+type MapDivEquivalent s xs ys = MapMulEquivalent (Recip s) xs ys
+
+
+{-
 
 -- Define the circumstances under which an inner product exists.
 type family HasProduct (ldims :: Shape) (rdims :: Shape) :: Constraint where
@@ -123,6 +130,7 @@ type family VectorLength (shape :: Shape) :: NN.Nat where
 type family Square (shape :: Shape) :: Constraint where
   Square ('MatrixShape g rs cs) = (ListLength rs ~ ListLength cs)
 
+-}
 
 -- This is still broken!
 {- Extended Example
@@ -162,6 +170,7 @@ Then what we want is
 
 -}
 
+
 -- A matrix shape for converting from one vector to another.
 -- This is the shape that, when right-multiplied by a column vector whose shape is from, produces a column vector whose shape is to.
 type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
@@ -171,10 +180,10 @@ type family DivideVectors (to :: Shape) (from :: Shape) :: Shape where
                                                              (MapMul f (MapRecip fs))
   -- try to deal with matrix/matrix division?
 
-
 type family DivideVectorLists (to :: [Dimension]) (from :: [Dimension]) :: Shape where
   DivideVectorLists (t ': ts) (f ': fs) = DivideVectors ('VectorShape t ts) ('VectorShape f fs)
 
+{-
 type family HorizontallyConcatenable (s1 :: Shape) (s2 :: Shape) :: Constraint where
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('MatrixShape g2 rs2 cs2) = (rs1 ~ rs2)
   HorizontallyConcatenable ('MatrixShape g1 rs1 cs1) ('VectorShape r2 rs2)     = (g1 ~ r2, rs2 ~ MapMul g1 rs1)
@@ -220,6 +229,8 @@ type family MatrixRow (matrix :: Shape) (row :: NN.Nat) :: Shape where
 type family MatrixColumn (matrix :: Shape) (col :: NN.Nat) :: Shape where
   MatrixColumn ('MatrixShape g rs cs) col = 'VectorShape (g * ElementAt (DOne ': cs) col) (MapMul (g * ElementAt (DOne ': cs) col) rs)
 
+-}
+
 -- Invert all dimensions in a list of dimensions.
 type family MapRecip (dims :: [Dimension]) :: [Dimension] where
   MapRecip '[] = '[]
@@ -243,6 +254,7 @@ type family MapDiv (dim :: Dimension) (dims :: [Dimension]) :: [Dimension] where
   MapDiv d '[] = '[]
   MapDiv d (x ': xs) = (x / d ': (MapDiv d xs))
 
+{-
 
 -- Define the product of a list of dimensions.
 type family DimProduct (dims :: [Dimension]) :: Dimension where
@@ -271,3 +283,5 @@ type family ListAppend (xs :: [k]) (ys :: [k]) :: [k] where
 type family ElementAt (xs :: [k]) (n :: NN.Nat) :: k where
   ElementAt (a ': as) 0 = a
   ElementAt (a ': as) n = ElementAt as (n NN.- 1)
+
+-}
